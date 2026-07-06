@@ -117,6 +117,9 @@ export class Game {
         this.obstacleTimer = 60;
         this.collectibleTimer = 80;
 
+        // Last spawned obstacle type (for compatibility checks)
+        this.lastObstacleType = null;
+
         // Screen shake
         this.shakeX = 0;
         this.shakeY = 0;
@@ -159,11 +162,11 @@ export class Game {
         this.bossRestTimer = 0;
         this.bossPatterns = [
             // Pattern 1: Jump-Slide alternating (predictable rhythm)
-            ['crate', 'barrier', 'crate', 'barrier', 'crate', 'barrier', 'tall_crate', 'barrier'],
-            // Pattern 2: Rolling chaos with slides
-            ['rolling_barrel', 'crate', 'rolling_barrel', 'barrier', 'rolling_barrel', 'crate', 'tall_crate', 'crate'],
-            // Pattern 3: Mixed with pits
-            ['barrier', 'crate', 'pit', 'barrier', 'crate', 'pit', 'barrier', 'tall_crate']
+            ['crate', 'barrier', 'crate', 'barrier', 'barrel', 'crate', 'barrel', 'crate'],
+            // Pattern 2: Rolling barrels + jumps (no slides after fast obstacles)
+            ['rolling_barrel', 'crate', 'barrel', 'crate', 'rolling_barrel', 'barrel', 'crate', 'barrel'],
+            // Pattern 3: Mixed with pits (generous spacing, no barrier→tall combos)
+            ['crate', 'pit', 'barrel', 'crate', 'pit', 'barrel', 'crate', 'pit']
         ];
 
         // ── Milestones (theme changes) ──
@@ -196,6 +199,9 @@ export class Game {
         this.score = 0;
         this.obstacleTimer = 80;
         this.collectibleTimer = 100;
+
+        // Reset last obstacle tracking
+        this.lastObstacleType = null;
         this.shakeX = 0;
         this.shakeY = 0;
         this.shakeDuration = 0;
@@ -377,7 +383,7 @@ export class Game {
                         this.obstacles.push(new Obstacle(CANVAS_WIDTH + 60, type));
                     }
                     this.bossPatternStep++;
-                    this.bossSpawnTimer = 40; // 40-frame gap between spawns
+                    this.bossSpawnTimer = 65; // safe gap between boss spawns
                 } else {
                     // Pattern complete
                     this.bossActive = false;
@@ -400,8 +406,9 @@ export class Game {
             this.obstacleTimer--;
             if (this.obstacleTimer <= 0) {
                 this._spawnObstacle();
-                const base = Math.max(MIN_OBSTACLE_GAP, MAX_OBSTACLE_GAP - this.gameSpeed * 8);
-                this.obstacleTimer = randomBetween(base, base + 50);
+                // Scale gap with speed, but keep a safe minimum
+                const base = Math.max(MIN_OBSTACLE_GAP, MAX_OBSTACLE_GAP - this.gameSpeed * 6);
+                this.obstacleTimer = randomBetween(base, base + 60);
             }
         }
 
@@ -409,9 +416,14 @@ export class Game {
         if (!this.bossActive && this.bossRestTimer <= 0) {
             this.pitTimer--;
             if (this.pitTimer <= 0) {
-                const gapWidth = randomBetween(70, 130);
-                this.pits.push(new Pit(CANVAS_WIDTH + 60, gapWidth));
-                this.pitTimer = randomBetween(250, 400);
+                // Don't spawn a pit if an obstacle just spawned nearby
+                const lastObs = this.obstacles[this.obstacles.length - 1];
+                const safeToSpawn = !lastObs || (CANVAS_WIDTH + 60 - lastObs.x) > 200;
+                if (safeToSpawn) {
+                    const gapWidth = randomBetween(70, 110);
+                    this.pits.push(new Pit(CANVAS_WIDTH + 60, gapWidth));
+                }
+                this.pitTimer = randomBetween(300, 500);
             }
         }
 
@@ -939,24 +951,47 @@ export class Game {
     // ── Spawning ──
 
     _spawnObstacle() {
-        // Weighted obstacle selection — new types appear less often
-        // Base types: crate(25%), barrel(20%), tall_crate(15%)
-        // New types: barrier(15%), rolling_barrel(15%), flying_bird(10%)
-        const roll = Math.random();
+        // ── Smart spawning: prevent impossible combinations ──
+        // Rules:
+        //   After barrier (must slide) → only allow: crate, barrel (easy jump)
+        //   After tall_crate (must double-jump) → only allow: crate, barrel, flying_bird
+        //   After rolling_barrel (fast, need quick reaction) → no barrier or tall_crate
+        //   Otherwise: full random weighted selection
+
+        const last = this.lastObstacleType;
         let type;
-        if (roll < 0.25) {
-            type = 'crate';
-        } else if (roll < 0.45) {
-            type = 'barrel';
-        } else if (roll < 0.60) {
-            type = 'tall_crate';
-        } else if (roll < 0.75) {
-            type = 'barrier';
-        } else if (roll < 0.90) {
-            type = 'rolling_barrel';
+
+        if (last === 'barrier') {
+            // After sliding under barrier, player needs time to jump → only easy obstacles
+            const options = ['crate', 'crate', 'barrel', 'flying_bird'];
+            type = options[randomBetween(0, options.length - 1)];
+        } else if (last === 'tall_crate') {
+            // After a big double-jump, don't require immediate slide
+            const options = ['crate', 'barrel', 'barrel', 'flying_bird', 'rolling_barrel'];
+            type = options[randomBetween(0, options.length - 1)];
+        } else if (last === 'rolling_barrel') {
+            // After fast rolling barrel, give breathing room
+            const options = ['crate', 'barrel', 'crate', 'barrel', 'flying_bird'];
+            type = options[randomBetween(0, options.length - 1)];
         } else {
-            type = 'flying_bird';
+            // Normal weighted selection
+            const roll = Math.random();
+            if (roll < 0.25) {
+                type = 'crate';
+            } else if (roll < 0.45) {
+                type = 'barrel';
+            } else if (roll < 0.58) {
+                type = 'tall_crate';
+            } else if (roll < 0.72) {
+                type = 'barrier';
+            } else if (roll < 0.87) {
+                type = 'rolling_barrel';
+            } else {
+                type = 'flying_bird';
+            }
         }
+
+        this.lastObstacleType = type;
         this.obstacles.push(new Obstacle(CANVAS_WIDTH + 60, type));
     }
 
