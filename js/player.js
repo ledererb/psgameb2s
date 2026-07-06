@@ -634,25 +634,25 @@ export class Player {
         const scarfColor = '#E74C3C';
         const scarfDark = '#C0392B';
 
-        // Scarf band around neck
-        const scarfGrad = ctx.createLinearGradient(cx - 14, sy - 2, cx + 14, sy + 4);
+        // Scarf band around neck (matches body width)
+        const scarfGrad = ctx.createLinearGradient(cx - 22, sy - 2, cx + 22, sy + 4);
         scarfGrad.addColorStop(0, scarfColor);
         scarfGrad.addColorStop(0.5, '#E95E4F');
         scarfGrad.addColorStop(1, scarfDark);
 
         ctx.fillStyle = scarfGrad;
         ctx.beginPath();
-        ctx.ellipse(cx, sy, 14, 3.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx, sy, 22, 4, 0, 0, Math.PI * 2);
         ctx.fill();
 
         // Flowing tail (animated with sin wave)
-        const wave1 = Math.sin(this.animFrame * Math.PI / 2) * 3;
-        const wave2 = Math.sin(this.animFrame * Math.PI / 2 + 1.5) * 4;
+        const wave1 = Math.sin(this.animFrame * Math.PI / 2) * 4;
+        const wave2 = Math.sin(this.animFrame * Math.PI / 2 + 1.5) * 5;
 
-        const tailStartX = cx - 10;
+        const tailStartX = cx - 16;
         const tailStartY = sy + 1;
 
-        const tailGrad = ctx.createLinearGradient(tailStartX, tailStartY, tailStartX - 18, tailStartY + 10);
+        const tailGrad = ctx.createLinearGradient(tailStartX, tailStartY, tailStartX - 22, tailStartY + 12);
         tailGrad.addColorStop(0, scarfColor);
         tailGrad.addColorStop(1, scarfDark);
 
@@ -660,12 +660,12 @@ export class Player {
         ctx.beginPath();
         ctx.moveTo(tailStartX, tailStartY - 2);
         ctx.quadraticCurveTo(
-            tailStartX - 8 + wave1, tailStartY + 2 + wave1 * 0.5,
-            tailStartX - 16 + wave2, tailStartY + 8 + wave2 * 0.3
+            tailStartX - 10 + wave1, tailStartY + 3 + wave1 * 0.5,
+            tailStartX - 20 + wave2, tailStartY + 10 + wave2 * 0.3
         );
-        ctx.lineTo(tailStartX - 18 + wave2, tailStartY + 12 + wave2 * 0.3);
+        ctx.lineTo(tailStartX - 22 + wave2, tailStartY + 14 + wave2 * 0.3);
         ctx.quadraticCurveTo(
-            tailStartX - 10 + wave1, tailStartY + 6 + wave1 * 0.4,
+            tailStartX - 12 + wave1, tailStartY + 7 + wave1 * 0.4,
             tailStartX, tailStartY + 3
         );
         ctx.closePath();
