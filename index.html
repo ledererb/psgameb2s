@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="Hotdog Dash — Ugorj, szedj hotdogokat, kerüld az akadályokat! 2D endless runner játék.">
+    <title>🌭 Hotdog Dash</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Game Canvas -->
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+        <!-- ═══════════════ Menu Screen ═══════════════ -->
+        <div id="menu-screen" class="screen overlay">
+            <div class="screen-content">
+                <h1 class="game-title">
+                    <span class="title-emoji">🌭</span>
+                    HOTDOG DASH
+                    <span class="title-emoji">🌭</span>
+                </h1>
+                <p class="subtitle">Ugorj, gyűjts, és legyél a legjobb!</p>
+                <div id="high-score" class="high-score"></div>
+                <button id="start-btn" class="btn btn-primary">
+                    <span class="btn-icon">▶</span> START
+                </button>
+                <div class="controls-info">
+                    <div class="control-item">
+                        <kbd>Space</kbd> / <kbd>↑</kbd> / <span class="touch-icon">👆 Tap</span>
+                        <span class="control-label">Ugrás</span>
+                    </div>
+                    <div class="control-item">
+                        <kbd>↓</kbd> / <span class="touch-icon">👇 Swipe</span>
+                        <span class="control-label">Csúszás (akadályok alatt)</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="control-label">Dupla ugrás & kombó szorzó a magas pontokért!</span>
+                    </div>
+                </div>
+                <div class="game-tips">
+                    <span>🌭 Hotdog = +100 pont</span>
+                    <span>🍩 Fánk = +1 élet</span>
+                    <span>🧲 Mágnes</span>
+                    <span>💎 2× pont</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════ Game Over Screen ═══════════════ -->
+        <div id="gameover-screen" class="screen overlay hidden">
+            <div class="screen-content gameover-content">
+                <h2 class="gameover-title">GAME OVER</h2>
+                <div class="score-display">
+                    <span class="score-label">Pontszámod</span>
+                    <span id="final-score" class="score-value">0</span>
+                </div>
+
+                <div class="leaderboard-form">
+                    <p class="form-label">Írd fel a neved a ranglistára!</p>
+                    <div class="input-group">
+                        <input
+                            type="email"
+                            id="email-input"
+                            placeholder="te@email.com"
+                            autocomplete="email"
+                        >
+                        <button id="submit-score-btn" class="btn btn-submit">
+                            Pontszám mentése
+                        </button>
+                    </div>
+                </div>
+
+                <div class="leaderboard-section">
+                    <h3 class="lb-title">🏆 Ranglista</h3>
+                    <div id="leaderboard-list"></div>
+                </div>
+
+                <button id="restart-btn" class="btn btn-primary">
+                    <span class="btn-icon">🔄</span> Újra!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
