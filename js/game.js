@@ -179,6 +179,29 @@ export class Game {
         this.trailEffect = new TrailEffect();
         this.weatherSystem = new WeatherSystem(CANVAS_WIDTH, CANVAS_HEIGHT);
 
+        // ── Near-miss tracking ──
+        this.nearMissCooldown = 0;
+
+        // ── Hotdog formation system ──
+        this.formationCooldown = 0;
+
+        // ── Mission system ──
+        this.currentMission = null;
+        this.missionTimer = 300; // start first mission after 5 sec
+        this.missionPool = [
+            { type: 'collect', target: 5, label: '🌭 Gyűjts {n} hotdogot!', reward: 300 },
+            { type: 'collect', target: 8, label: '🌭 Gyűjts {n} hotdogot!', reward: 500 },
+            { type: 'dodge', target: 3, label: '🏃 Kerülj el {n} akadályt!', reward: 250 },
+            { type: 'dodge', target: 5, label: '🏃 Kerülj el {n} akadályt!', reward: 400 },
+            { type: 'combo', target: 5, label: '🔥 Érj el ×{n} kombót!', reward: 350 },
+            { type: 'combo', target: 8, label: '🔥 Érj el ×{n} kombót!', reward: 600 },
+            { type: 'distance', target: 500, label: '📏 Fuss {n} métert!', reward: 200 },
+            { type: 'distance', target: 1000, label: '📏 Fuss {n} métert!', reward: 400 },
+        ];
+        this.missionProgress = 0;
+        this.missionScoreAtStart = 0;
+        this.completedMissions = 0;
+
         // Callbacks
         this.onGameOver = null;
         this.onScoreChange = null;
@@ -244,6 +267,19 @@ export class Game {
         this.trailEffect = new TrailEffect();
         this.weatherSystem = new WeatherSystem(CANVAS_WIDTH, CANVAS_HEIGHT);
 
+        // Reset near-miss
+        this.nearMissCooldown = 0;
+
+        // Reset formations
+        this.formationCooldown = 0;
+
+        // Reset missions
+        this.currentMission = null;
+        this.missionTimer = 300;
+        this.missionProgress = 0;
+        this.missionScoreAtStart = 0;
+        this.completedMissions = 0;
+
         // Reset background theme
         this.background = new ParallaxBackground();
     }
@@ -280,6 +316,19 @@ export class Game {
         }
     }
 
+    handleGroundPound() {
+        if (!this.isRunning) return;
+        const result = this.player.groundPound();
+        if (result === 'groundPound') {
+            this.shakeDuration = 10;
+            this._spawnParticles(
+                this.player.x + this.player.width / 2,
+                this.player.y + this.player.height,
+                8, '#FFD700', 1.0
+            );
+        }
+    }
+
     // ── Update (one frame) ──
 
     update() {
@@ -292,6 +341,18 @@ export class Game {
 
         // Score (distance)
         this.score++;
+
+        // ── Near-miss cooldown ──
+        if (this.nearMissCooldown > 0) this.nearMissCooldown--;
+
+        // ── Formation cooldown ──
+        if (this.formationCooldown > 0) this.formationCooldown--;
+
+
+
+
+        // ── Mission system update ──
+        this._updateMissions();
 
         // ── Combo timer ──
         if (this.comboTimer > 0) {
@@ -697,6 +758,7 @@ export class Game {
 
         // HUD
         this._drawHUD(ctx);
+        this._drawMissionHUD(ctx);
 
         ctx.restore();
     }
@@ -997,8 +1059,53 @@ export class Game {
 
     _spawnCollectible() {
         const type = Math.random() < DONUT_CHANCE ? 'donut' : 'hotdog';
+
+        // 30% chance for hotdog formation (only hotdogs, not donuts, and cooldown expired)
+        if (type === 'hotdog' && this.formationCooldown <= 0 && Math.random() < 0.30) {
+            this._spawnFormation();
+            this.formationCooldown = 120; // don't spawn another formation too soon
+            return;
+        }
+
         const y = randomBetween(GROUND_Y - 130, GROUND_Y - 40);
         this.collectibles.push(new Collectible(CANVAS_WIDTH + 40, y, type));
+    }
+
+    /**
+     * Spawn hotdogs in a formation pattern (arc, wave, or line).
+     */
+    _spawnFormation() {
+        const patterns = ['arc', 'wave', 'line'];
+        const pattern = patterns[randomBetween(0, patterns.length - 1)];
+        const count = randomBetween(4, 7);
+        const baseX = CANVAS_WIDTH + 60;
+        const spacing = 38;
+
+        for (let i = 0; i < count; i++) {
+            let x, y;
+            switch (pattern) {
+                case 'arc': {
+                    // Arc shape (like jumping over an obstacle)
+                    const t = i / (count - 1); // 0 to 1
+                    x = baseX + i * spacing;
+                    y = GROUND_Y - 50 - Math.sin(t * Math.PI) * 70;
+                    break;
+                }
+                case 'wave': {
+                    // Sine wave
+                    x = baseX + i * spacing;
+                    y = GROUND_Y - 80 + Math.sin(i * 0.8) * 35;
+                    break;
+                }
+                case 'line': {
+                    // Diagonal line going up
+                    x = baseX + i * spacing;
+                    y = GROUND_Y - 40 - i * 14;
+                    break;
+                }
+            }
+            this.collectibles.push(new Collectible(x, y, 'hotdog'));
+        }
     }
 
     // ── Collisions ──
@@ -1031,6 +1138,39 @@ export class Game {
             // Mark as passed for scoring (if player is past it)
             if (this.player.x > obs.x + obs.width && !obs.passed) {
                 obs.passed = true;
+
+                // ── Near-miss detection ──
+                if (this.nearMissCooldown <= 0 && !this.player.isInvincible) {
+                    const oh = obs.getHitbox();
+                    // Check vertical near-miss (player bottom near obstacle top, or vice versa)
+                    const vertGap = Math.min(
+                        Math.abs(ph.y + ph.height - oh.y),
+                        Math.abs(oh.y + oh.height - ph.y)
+                    );
+                    const horizGap = Math.abs(ph.x + ph.width - oh.x);
+                    if (vertGap < 12 || horizGap < 8) {
+                        const nearMissBonus = 50;
+                        this.score += nearMissBonus;
+                        this.floatingTexts.push(
+                            new FloatingText(
+                                this.player.x + this.player.width / 2,
+                                this.player.y - 10,
+                                'CLOSE! +50', '#00DDFF'
+                            )
+                        );
+                        this._spawnParticles(
+                            this.player.x + this.player.width / 2,
+                            this.player.y + this.player.height / 2,
+                            4, '#00DDFF', 0.6
+                        );
+                        this.nearMissCooldown = 30; // prevent spam
+                    }
+                }
+
+                // ── Mission: dodge tracking ──
+                if (this.currentMission && this.currentMission.type === 'dodge') {
+                    this.missionProgress++;
+                }
             }
         }
 
@@ -1128,6 +1268,11 @@ export class Game {
                     this.screenFlash = { alpha: 0.12, color: 'rgba(241, 196, 15, 0.4)' };
                     // Trigger Snacky happy face
                     if (this.player.triggerHappy) this.player.triggerHappy();
+
+                    // ── Mission: collect tracking ──
+                    if (this.currentMission && this.currentMission.type === 'collect') {
+                        this.missionProgress++;
+                    }
                 } else if (col.type === 'donut') {
                     this.player.addLife();
                     this.audio.playExtraLife();
@@ -1155,4 +1300,111 @@ export class Game {
     getScore() { return this.score; }
     getLives() { return this.player.lives; }
     getSpeed() { return this.gameSpeed; }
+
+    // ── Mission system ──
+
+    _updateMissions() {
+        if (!this.currentMission) {
+            this.missionTimer--;
+            if (this.missionTimer <= 0) {
+                this._startNewMission();
+            }
+            return;
+        }
+
+        const m = this.currentMission;
+
+        // Check distance missions
+        if (m.type === 'distance') {
+            this.missionProgress = this.score - this.missionScoreAtStart;
+        }
+
+        // Check combo missions
+        if (m.type === 'combo') {
+            this.missionProgress = Math.max(this.missionProgress, this.comboMultiplier);
+        }
+
+        // Check completion
+        if (this.missionProgress >= m.target) {
+            // Mission complete!
+            this.score += m.reward;
+            this.floatingTexts.push(
+                new FloatingText(
+                    CANVAS_WIDTH / 2, 70,
+                    `✅ MISSION! +${m.reward}`, '#2ECC71'
+                )
+            );
+            this._spawnParticles(CANVAS_WIDTH / 2, 60, 10, '#2ECC71', 1.5);
+            this.screenFlash = { alpha: 0.15, color: 'rgba(46, 204, 113, 0.4)' };
+            this.completedMissions++;
+            this.currentMission = null;
+            // Next mission after a delay (shorter as game progresses)
+            this.missionTimer = Math.max(180, 400 - this.completedMissions * 30);
+        }
+    }
+
+    _startNewMission() {
+        // Pick a random mission from the pool
+        const idx = randomBetween(0, this.missionPool.length - 1);
+        const template = this.missionPool[idx];
+        this.currentMission = { ...template };
+        this.missionProgress = 0;
+        this.missionScoreAtStart = this.score;
+
+        // Floating text announcement
+        const label = template.label.replace('{n}', template.target);
+        this.floatingTexts.push(
+            new FloatingText(CANVAS_WIDTH / 2, 70, label, '#3498DB')
+        );
+    }
+
+    _drawMissionHUD(ctx) {
+        if (!this.currentMission) return;
+
+        const m = this.currentMission;
+        const label = m.label.replace('{n}', m.target);
+        const progress = Math.min(this.missionProgress, m.target);
+        const ratio = progress / m.target;
+
+        // Position: bottom-left
+        const x = 12;
+        const y = CANVAS_HEIGHT - 16;
+
+        // Background pill
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.beginPath();
+        ctx.roundRect(x, y - 14, 210, 20, 6);
+        ctx.fill();
+
+        // Progress bar background
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.beginPath();
+        ctx.roundRect(x + 130, y - 10, 70, 12, 4);
+        ctx.fill();
+
+        // Progress bar fill
+        const barColor = ratio >= 1 ? '#2ECC71' : '#3498DB';
+        ctx.fillStyle = barColor;
+        ctx.beginPath();
+        ctx.roundRect(x + 130, y - 10, 70 * ratio, 12, 4);
+        ctx.fill();
+
+        // Mission text
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 10px Outfit, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(label, x + 6, y);
+
+        // Progress count
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 9px Outfit, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${progress}/${m.target}`, x + 165, y);
+
+        // Reward
+        ctx.fillStyle = '#F1C40F';
+        ctx.font = 'bold 9px Outfit, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(`+${m.reward}`, x + 206, y);
+    }
 }

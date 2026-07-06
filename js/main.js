@@ -79,12 +79,16 @@ function init() {
             handleAction();
         }
 
-        // Slide: ArrowDown
+        // Slide / Ground Pound: ArrowDown
         if (e.code === 'ArrowDown') {
             e.preventDefault();
             if (state === 'playing') {
-                slideKeyDown = true;
-                game.handleSlide();
+                if (!game.player.isOnGround) {
+                    game.handleGroundPound();
+                } else {
+                    slideKeyDown = true;
+                    game.handleSlide();
+                }
             }
         }
     });
@@ -118,10 +122,14 @@ function init() {
         const touch = e.touches[0];
         const deltaY = touch.clientY - touchStartY;
 
-        // Swipe down detected — trigger slide
+        // Swipe down detected — ground pound (in air) or slide (on ground)
         if (deltaY > 30 && !touchIsSliding) {
             touchIsSliding = true;
-            game.handleSlide();
+            if (!game.player.isOnGround) {
+                game.handleGroundPound();
+            } else {
+                game.handleSlide();
+            }
         }
     }, { passive: false });
 
@@ -237,8 +245,16 @@ function submitScore() {
 
 function updateHighScore() {
     const hs = leaderboard.getHighScore();
+    const daily = leaderboard.getDailyHighScore();
     if (highScoreEl) {
-        highScoreEl.textContent = hs > 0 ? `Rekord: ${formatScore(hs)}` : '';
+        let text = '';
+        if (hs > 0) {
+            text = `🏆 Legjobb: ${formatScore(hs)}`;
+            if (daily > 0) {
+                text += ` | 📅 Mai rekord: ${formatScore(daily)}`;
+            }
+        }
+        highScoreEl.textContent = text;
     }
 }
 
@@ -248,9 +264,9 @@ function handleResize() {
     const container = document.getElementById('game-container');
     if (!container) return;
 
-    const maxW = Math.min(window.innerWidth - 32, 800);
-    const maxH = window.innerHeight - 40;
-    const aspect = CANVAS_WIDTH / CANVAS_HEIGHT;
+    const maxW = window.innerWidth;
+    const maxH = window.innerHeight;
+    const aspect = CANVAS_WIDTH / CANVAS_HEIGHT; // 2:1
     let w = maxW;
     let h = w / aspect;
     if (h > maxH) {

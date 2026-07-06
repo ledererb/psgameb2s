@@ -52,6 +52,9 @@ export class Player {
         this.currentLookX = 0;
         this.currentLookY = 0;
 
+        // Ground pound
+        this.isGroundPounding = false;
+
         // Speed-based sweat
         this.speedLevel = 0;
 
@@ -90,6 +93,15 @@ export class Player {
         this.slideTimer = this.slideMinDuration;
         this.squash = 0.5;
         this.stretch = 1.4;
+    }
+
+    // ── Ground pound mechanic ──
+
+    groundPound() {
+        if (this.isOnGround || this.isSliding) return null;
+        this.velocityY = 18;
+        this.isGroundPounding = true;
+        return 'groundPound';
     }
 
     cancelSlide() {
@@ -156,8 +168,15 @@ export class Player {
                 this.isOnGround = true;
                 this.canDoubleJump = true;
                 this.rotation = 0;
-                this.squash = 0.7;
-                this.stretch = 1.3;
+
+                if (this.isGroundPounding) {
+                    this.isGroundPounding = false;
+                    this.squash = 0.4;
+                    this.stretch = 1.6;
+                } else {
+                    this.squash = 0.7;
+                    this.stretch = 1.3;
+                }
             }
         }
 
@@ -846,6 +865,7 @@ export class Player {
         this.slideTimer = 0;
         this.slideCooldown = 0;
         this.slideDustParticles = [];
+        this.isGroundPounding = false;
 
         this.lookTargetX = 0;
         this.lookTargetY = 0;

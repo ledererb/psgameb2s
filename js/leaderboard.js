@@ -49,6 +49,21 @@ export class Leaderboard {
     }
 
     /**
+     * Get the highest score from today's entries.
+     * Matches entries whose ISO date string starts with today's YYYY-MM-DD.
+     */
+    getDailyHighScore() {
+        const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+        let best = 0;
+        for (const entry of this.scores) {
+            if (entry.date && entry.date.startsWith(today) && entry.score > best) {
+                best = entry.score;
+            }
+        }
+        return best;
+    }
+
+    /**
      * Mask an email for display: "jo***@gm***.com"
      */
     static maskEmail(email) {
