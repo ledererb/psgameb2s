@@ -376,7 +376,7 @@ export class Game {
             }
         }
 
-        // ── Magnet effect: attract collectibles toward player ──
+        // ── Magnet effect: attract ALL collectibles toward player ──
         if (this.activeMagnet.active) {
             const playerCX = (this.player.x + this.player.width / 2) | 0;
             const playerCY = (this.player.y + this.player.height / 2) | 0;
@@ -387,11 +387,11 @@ export class Game {
                 const dx = playerCX - colCX;
                 const dy = playerCY - colCY;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < 150 && dist > 1) {
-                    // Pull toward player
-                    const force = (150 - dist) / 150 * 3;
+                if (dist > 1) {
+                    // Strong pull — all collectibles fly toward player
+                    const force = Math.min(12, 8 + (300 - Math.min(dist, 300)) / 300 * 6);
                     col.x += (dx / dist) * force;
-                    col.baseY += (dy / dist) * force * 0.5;
+                    col.baseY += (dy / dist) * force * 0.7;
                 }
             }
         }
