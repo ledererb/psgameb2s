@@ -36,8 +36,12 @@ let highScoreEl;
 function init() {
     canvas = document.getElementById('gameCanvas');
     ctx = canvas.getContext('2d');
-    canvas.width = CANVAS_WIDTH;
-    canvas.height = CANVAS_HEIGHT;
+
+    // HiDPI/Retina support: scale canvas backing store
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = CANVAS_WIDTH * dpr;
+    canvas.height = CANVAS_HEIGHT * dpr;
+    ctx.scale(dpr, dpr);
 
     // Cache DOM
     menuScreen = document.getElementById('menu-screen');
@@ -275,6 +279,14 @@ function handleResize() {
     }
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
+
+    // Update backing store for current DPR (handles display changes)
+    const dpr = window.devicePixelRatio || 1;
+    if (canvas.width !== CANVAS_WIDTH * dpr) {
+        canvas.width = CANVAS_WIDTH * dpr;
+        canvas.height = CANVAS_HEIGHT * dpr;
+        ctx.scale(dpr, dpr);
+    }
 }
 
 // ── Main render loop ──

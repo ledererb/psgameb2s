@@ -1132,6 +1132,8 @@ export class Game {
                     // Reset combo on hit
                     this.comboMultiplier = 1;
                     this.comboTimer = 0;
+                    // Fail current mission
+                    this._failMission();
                     if (this.player.lives <= 0) return;
                 }
             }
@@ -1193,6 +1195,8 @@ export class Game {
                         // Reset combo on hit
                         this.comboMultiplier = 1;
                         this.comboTimer = 0;
+                        // Fail current mission
+                        this._failMission();
                         if (this.player.lives <= 0) return;
                     }
                 }
@@ -1356,6 +1360,20 @@ export class Game {
         this.floatingTexts.push(
             new FloatingText(CANVAS_WIDTH / 2, 70, label, '#3498DB')
         );
+    }
+
+    _failMission() {
+        if (!this.currentMission) return;
+        this.floatingTexts.push(
+            new FloatingText(
+                CANVAS_WIDTH / 2, 70,
+                '❌ KÜLDETÉS SIKERTELEN!', '#E74C3C'
+            )
+        );
+        this.currentMission = null;
+        this.missionProgress = 0;
+        // Longer delay before next mission after failure
+        this.missionTimer = Math.max(200, 500 - this.completedMissions * 20);
     }
 
     _drawMissionHUD(ctx) {
