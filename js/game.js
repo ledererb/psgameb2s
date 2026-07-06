@@ -138,7 +138,7 @@ export class Game {
         this.comboMultiplier = 1;
         this.comboTimer = 0;
         this.comboMaxTimer = 180; // 3 sec at 60fps
-        this.maxCombo = 10;
+        this.maxCombo = 20;
 
         // ── Power-ups ──
         this.powerUps = [];            // spawned power-ups on track
