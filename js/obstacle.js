@@ -1,5 +1,5 @@
 // ============================================
-// Hotdog Dash — Obstacles
+// Snacky Dash — Obstacles
 // Six types: crate, barrel, tall_crate,
 //   barrier, rolling_barrel, flying_bird
 // ============================================

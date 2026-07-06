@@ -1,5 +1,5 @@
 // ============================================
-// Hotdog Dash — Visual Effects
+// Snacky Dash — Visual Effects
 // TrailEffect: speed-based particle trail
 // WeatherSystem: random rain/snow/fog events
 // ============================================

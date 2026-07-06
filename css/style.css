@@ -1,5 +1,5 @@
 /* ============================================
-   Hotdog Dash — Styles
+   Snacky Dash — Styles
    Premium dark theme with glassmorphism,
    neon accents, and smooth animations.
    ============================================ */
@@ -120,7 +120,16 @@ html, body {
 .subtitle {
     font-size: 1rem;
     color: #AEB6BF;
+    margin-bottom: 6px;
+    font-weight: 300;
+}
+
+.game-desc {
+    font-size: 0.85rem;
+    color: #8E99A4;
+    line-height: 1.5;
     margin-bottom: 12px;
+    padding: 0 8px;
     font-weight: 300;
 }
 

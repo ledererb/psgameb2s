@@ -1,5 +1,5 @@
 // ============================================
-// Hotdog Dash — Game Engine
+// Snacky Dash — Game Engine
 // Core game loop, entity management, collision,
 // spawning, particles, screen shake, HUD.
 // Enhanced with: combo system, power-ups, pits,

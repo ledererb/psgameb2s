@@ -1,5 +1,5 @@
 // ============================================
-// Hotdog Dash — Power-Ups
+// Snacky Dash — Power-Ups
 // Magnet: attracts collectibles for 8 seconds
 // Double Score: doubles points for 10 seconds
 // ============================================

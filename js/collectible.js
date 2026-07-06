@@ -1,5 +1,5 @@
 // ============================================
-// Hotdog Dash — Collectible Items
+// Snacky Dash — Collectible Items
 // Hotdog (+100 pts) and Donut (+1 life)
 // Now with magnet attraction support.
 // ============================================

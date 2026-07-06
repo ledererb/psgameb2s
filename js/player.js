@@ -1,5 +1,5 @@
 // ============================================
-// Hotdog Dash — Player Character (SNACKY!)
+// Snacky Dash — Player Character (SNACKY!)
 // Procedurally drawn canvas character matching
 // the Snacky design: orange blob body, black
 // ears, arms, legs, white eyes.

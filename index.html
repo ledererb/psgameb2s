@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="description" content="Hotdog Dash — Ugorj, szedj hotdogokat, kerüld az akadályokat! 2D endless runner játék.">
-    <title>🌭 Hotdog Dash</title>
+    <meta name="description" content="Snacky Dash — Segítsd Snacky-t a hotdogok begyűjtésében! Ugorj, csúszz és kerüld az akadályokat ebben az egyre gyorsuló 2D endless runner játékban.">
+    <title>🌭 Snacky Dash</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -20,10 +20,13 @@
             <div class="screen-content">
                 <h1 class="game-title">
                     <span class="title-emoji">🌭</span>
-                    HOTDOG DASH
+                    SNACKY DASH
                     <span class="title-emoji">🌭</span>
                 </h1>
-                <p class="subtitle">Ugorj, gyűjts, és legyél a legjobb!</p>
+                <p class="subtitle">Segítsd Snacky-t a hotdogok begyűjtésében!</p>
+                <p class="game-desc">Snacky egy éhes kis lény, aki az utcán rohan és hotdogokat gyűjt.
+                    Ugorj át az akadályokon, csússz át a sorompók alatt, és gyűjts minél több hotdogot!
+                    A pálya egyre gyorsul — meddig bírod?</p>
                 <div id="high-score" class="high-score"></div>
                 <button id="start-btn" class="btn btn-primary">
                     <span class="btn-icon">▶</span> START
@@ -31,19 +34,16 @@
                 <div class="controls-info">
                     <div class="control-item">
                         <kbd>Space</kbd> / <kbd>↑</kbd> / <span class="touch-icon">👆 Tap</span>
-                        <span class="control-label">Ugrás</span>
+                        <span class="control-label">Ugrás (kétszer = dupla ugrás!)</span>
                     </div>
                     <div class="control-item">
                         <kbd>↓</kbd> / <span class="touch-icon">👇 Swipe</span>
-                        <span class="control-label">Csúszás (akadályok alatt)</span>
-                    </div>
-                    <div class="control-item">
-                        <span class="control-label">Dupla ugrás & kombó szorzó a magas pontokért!</span>
+                        <span class="control-label">Csúszás (sorompók alatt)</span>
                     </div>
                 </div>
                 <div class="game-tips">
-                    <span>🌭 Hotdog = +100 pont</span>
-                    <span>🍩 Fánk = +1 élet</span>
+                    <span>🌭 +100 pont</span>
+                    <span>🍩 +1 élet</span>
                     <span>🧲 Mágnes</span>
                     <span>💎 2× pont</span>
                 </div>

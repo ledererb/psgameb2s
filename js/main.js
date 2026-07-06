@@ -1,5 +1,5 @@
 // ============================================
-// Hotdog Dash — Main Entry Point
+// Snacky Dash — Main Entry Point
 // Screen management, canvas setup, input
 // handling, and game orchestration.
 // Now includes slide/duck input handling.

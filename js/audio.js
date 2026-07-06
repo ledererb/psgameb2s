@@ -1,5 +1,5 @@
 // ============================================
-// Hotdog Dash — Audio Manager (Web Audio API)
+// Snacky Dash — Audio Manager (Web Audio API)
 // Synthesized sound effects, no external files.
 // ============================================
 

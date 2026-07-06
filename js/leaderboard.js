@@ -1,5 +1,5 @@
 // ============================================
-// Hotdog Dash — Leaderboard (localStorage)
+// Snacky Dash — Leaderboard (localStorage)
 // Stores email + score + date, shows top 10.
 // ============================================
 

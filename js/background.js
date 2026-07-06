@@ -1,5 +1,5 @@
 // ============================================
-// Hotdog Dash — Parallax Background
+// Snacky Dash — Parallax Background
 // 4-layer: sky+clouds, mountains, city silhouette, ground
 // All procedurally generated on canvas.
 // 5 theme palettes with smooth transitions.

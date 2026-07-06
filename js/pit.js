@@ -1,5 +1,5 @@
 // ============================================
-// Hotdog Dash — Pit (Ground Gap)
+// Snacky Dash — Pit (Ground Gap)
 // A dangerous gap in the road the player must
 // jump over. Falls in = damage.
 // ============================================

@@ -1,5 +1,5 @@
 // ============================================
-// Hotdog Dash — Game Constants & Utilities
+// Snacky Dash — Game Constants & Utilities
 // ============================================
 
 export const CANVAS_WIDTH = 800;
