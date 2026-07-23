@@ -117,6 +117,40 @@ export function createSnackyModel() {
     return { group, parts: { body, headGroup, armL, armR, legL, legR, scarf, pupilL, pupilR } };
 }
 
+export function createCollectibleMesh(type) {
+    const g = new THREE.Group();
+    if (type === 'hotdog') {
+        const bun = new THREE.Mesh(new THREE.CapsuleGeometry(0.18, 0.4, 4, 10),
+            new THREE.MeshStandardMaterial({ color: 0xE8B96F, roughness: 0.7 }));
+        bun.rotation.z = Math.PI / 2;
+        const sausage = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.42, 4, 10),
+            new THREE.MeshStandardMaterial({ color: 0xC0392B, roughness: 0.6 }));
+        sausage.rotation.z = Math.PI / 2;
+        sausage.position.y = 0.08;
+        g.add(bun, sausage);
+    } else {
+        const donut = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.12, 10, 18),
+            new THREE.MeshStandardMaterial({ color: 0xFF69B4, roughness: 0.5 }));
+        g.add(donut);
+    }
+    return g;
+}
+
+export function createPowerUpMesh(type) {
+    const g = new THREE.Group();
+    if (type === 'magnet') {
+        const mat = new THREE.MeshStandardMaterial({ color: 0xE74C3C, roughness: 0.4 });
+        const arc = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.1, 8, 14, Math.PI), mat);
+        arc.rotation.z = Math.PI;
+        g.add(arc);
+    } else {
+        const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.28),
+            new THREE.MeshStandardMaterial({ color: 0x9B59B6, roughness: 0.2, metalness: 0.6 }));
+        g.add(gem);
+    }
+    return g;
+}
+
 export function createObstacleMesh(type) {
     const g = new THREE.Group();
     const wood  = new THREE.MeshStandardMaterial({ color: 0xB0793C, roughness: 0.8 });

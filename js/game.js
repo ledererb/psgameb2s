@@ -221,6 +221,10 @@ export class Game {
             this.sceneMgr.scene.remove(obs.mesh);
         }
         this.obstacles = [];
+        // Remove 3D collectible meshes before dropping references
+        for (const col of this.collectibles) {
+            this.sceneMgr.scene.remove(col.mesh);
+        }
         this.collectibles = [];
         this.particles = [];
         this.floatingTexts = [];
@@ -244,7 +248,10 @@ export class Game {
         this.comboMultiplier = 1;
         this.comboTimer = 0;
 
-        // Reset power-ups
+        // Reset power-ups (remove 3D meshes first)
+        for (const pu of this.powerUps) {
+            this.sceneMgr.scene.remove(pu.mesh);
+        }
         this.powerUps = [];
         this.activeMagnet = { active: false, timer: 0, duration: 480 };
         this.activeDoubleScore = { active: false, timer: 0, duration: 600 };
@@ -406,6 +413,9 @@ export class Game {
                     col.x += (dx / dist) * force;
                     col.baseY += (dy / dist) * force * 0.7;
                 }
+                // Lane pull — collectible drifts toward the player's lane (float lane)
+                col.lane += Math.sign(this.player.lane - col.lane) * 0.08;
+                col.lane = Math.max(0, Math.min(2, col.lane));
             }
         }
 
@@ -506,7 +516,9 @@ export class Game {
         if (this.powerUpTimer <= 0) {
             const type = Math.random() < 0.5 ? 'magnet' : 'double_score';
             const y = randomBetween(GROUND_Y - 130, GROUND_Y - 50);
-            this.powerUps.push(new PowerUp(CANVAS_WIDTH + 40, y, type));
+            const pu = new PowerUp(CANVAS_WIDTH + 40, y, type, randomBetween(0, 2));
+            this.sceneMgr.scene.add(pu.mesh);
+            this.powerUps.push(pu);
             this.powerUpTimer = randomBetween(400, 700);
         }
 
@@ -540,7 +552,10 @@ export class Game {
         for (let i = this.powerUps.length - 1; i >= 0; i--) {
             this.powerUps[i].update(this.gameSpeed);
             if (this.powerUps[i].isOffScreen()) {
+                this.sceneMgr.scene.remove(this.powerUps[i].mesh);
                 this.powerUps.splice(i, 1);
+            } else {
+                this.powerUps[i].syncMesh(this.score);
             }
         }
 
@@ -548,7 +563,10 @@ export class Game {
         for (let i = this.collectibles.length - 1; i >= 0; i--) {
             this.collectibles[i].update(this.gameSpeed);
             if (this.collectibles[i].isOffScreen()) {
+                this.sceneMgr.scene.remove(this.collectibles[i].mesh);
                 this.collectibles.splice(i, 1);
+            } else {
+                this.collectibles[i].syncMesh(this.score);
             }
         }
 
@@ -704,15 +722,9 @@ export class Game {
             pit.draw(ctx);
         }
 
-        // Collectibles (behind player)
-        for (const c of this.collectibles) {
-            c.draw(ctx);
-        }
+        // Collectibles are rendered in 3D (WebGL layer) — no canvas draw here
 
-        // ── Power-ups ──
-        for (const pu of this.powerUps) {
-            pu.draw(ctx);
-        }
+        // Power-ups are rendered in 3D (WebGL layer) — no canvas draw here
 
         // Obstacles are rendered in 3D (WebGL layer) — no canvas draw here
 
@@ -1107,21 +1119,27 @@ export class Game {
         }
 
         const y = randomBetween(GROUND_Y - 130, GROUND_Y - 40);
-        this.collectibles.push(new Collectible(CANVAS_WIDTH + 40, y, type));
+        const lane = randomBetween(0, 2);
+        const col = new Collectible(CANVAS_WIDTH + 40, y, type, lane);
+        this.sceneMgr.scene.add(col.mesh);
+        this.collectibles.push(col);
     }
 
     /**
-     * Spawn hotdogs in a formation pattern (arc, wave, or line).
+     * Spawn hotdogs in a formation pattern (arc, wave, line, or zigzag).
+     * arc/wave/line: whole formation shares one random lane.
+     * zigzag: each item gets lane = i % 3 (spans across lanes).
      */
     _spawnFormation() {
-        const patterns = ['arc', 'wave', 'line'];
+        const patterns = ['arc', 'wave', 'line', 'zigzag'];
         const pattern = patterns[randomBetween(0, patterns.length - 1)];
         const count = randomBetween(4, 7);
         const baseX = CANVAS_WIDTH + 60;
         const spacing = 38;
+        const formationLane = randomBetween(0, 2); // one lane for the whole formation (non-zigzag)
 
         for (let i = 0; i < count; i++) {
-            let x, y;
+            let x, y, lane = formationLane;
             switch (pattern) {
                 case 'arc': {
                     // Arc shape (like jumping over an obstacle)
@@ -1142,8 +1160,16 @@ export class Game {
                     y = GROUND_Y - 40 - i * 14;
                     break;
                 }
+                case 'zigzag': {
+                    lane = i % 3;
+                    x = baseX + i * spacing;
+                    y = GROUND_Y - 60;
+                    break;
+                }
             }
-            this.collectibles.push(new Collectible(x, y, 'hotdog'));
+            const col = new Collectible(x, y, 'hotdog', lane);
+            this.sceneMgr.scene.add(col.mesh);
+            this.collectibles.push(col);
         }
     }
 
@@ -1252,6 +1278,8 @@ export class Game {
         for (let i = this.powerUps.length - 1; i >= 0; i--) {
             const pu = this.powerUps[i];
             if (pu.collected) continue;
+            // Lane-filtered: only same-lane power-ups can be picked up
+            if (pu.lane !== this.player.lane) continue;
             if (checkCollision(ph, pu.getHitbox())) {
                 pu.collected = true;
 
@@ -1276,6 +1304,7 @@ export class Game {
                 }
 
                 this.audio.playCollect();
+                this.sceneMgr.scene.remove(pu.mesh);
                 this.powerUps.splice(i, 1);
             }
         }
@@ -1284,6 +1313,8 @@ export class Game {
         for (let i = this.collectibles.length - 1; i >= 0; i--) {
             const col = this.collectibles[i];
             if (col.collected) continue;
+            // Lane-filtered: Math.round because the magnet pulls lanes as floats
+            if (Math.round(col.lane) !== this.player.lane) continue;
             if (checkCollision(ph, col.getHitbox())) {
                 col.collected = true;
 
@@ -1327,6 +1358,7 @@ export class Game {
                     );
                 }
 
+                this.sceneMgr.scene.remove(col.mesh);
                 this.collectibles.splice(i, 1);
             }
         }
