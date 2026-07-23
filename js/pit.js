@@ -21,7 +21,6 @@ export class Pit {
         this.passed = false;
 
         // ── Lane assignment (-1 = full-width covers all three lanes) ──
-        this.lane = lane;
         this.lanes = lane === -1 ? [0, 1, 2] : [lane];
 
         // ── 3D mesh: dark hole stretched to the gap's logical width ──

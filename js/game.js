@@ -1067,7 +1067,7 @@ export class Game {
         this.lastObstacleType = type;
 
         const span = (type === 'barrier' && Math.random() < 0.4) ? 2 : 1;
-        const lane = this._pickSafeLane(type, CANVAS_WIDTH + 60, span);
+        const lane = this._pickSafeLane(CANVAS_WIDTH + 60, span);
         if (lane === null) {
             this.obstacleTimer = 30; // try again shortly
             return;
@@ -1081,7 +1081,7 @@ export class Game {
      * Pick a lane that keeps at least one lane passable in the spawn window.
      * Returns null if every lane would be blocked (spawn deferred).
      */
-    _pickSafeLane(type, spawnX, span) {
+    _pickSafeLane(spawnX, span) {
         const WINDOW = 60; // logical px — obstacles this close arrive simultaneously
         const blocked = new Set();
         for (const o of this.obstacles) {
@@ -1089,11 +1089,10 @@ export class Game {
                 for (const l of o.lanes) blocked.add(l);
             }
         }
+        // For span-2 obstacles also require the neighbouring lane to be free and in bounds
         const free = [0, 1, 2].filter(l => !blocked.has(l) && (span === 1 || !blocked.has(l + 1)) && (span === 1 || l + 1 <= 2));
         if (free.length === 0) return null;
-        // If barrier spans 2, the third lane must stay free of tall obstacles nearby
-        const pick = free[randomBetween(0, free.length - 1)];
-        return pick;
+        return free[randomBetween(0, free.length - 1)];
     }
 
     _spawnCollectible() {

@@ -10,3 +10,7 @@ Thumbs.db
 
 # Node (ha később kellene)
 node_modules/
+
+# Verification artifacts (screenshots, Playwright output)
+task*.png
+.playwright-mcp/

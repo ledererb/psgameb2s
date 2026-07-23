@@ -184,7 +184,7 @@ export function createPowerUpMesh(type) {
 }
 
 export function createPitMesh(span) {
-    // Dark jagged hole decal + inner walls illusion
+    // Flat dark hole decal stretched across the pit's lanes
     const w = span === 3 ? 6.6 : 2.0;
     const g = new THREE.Group();
     const hole = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, 1),
