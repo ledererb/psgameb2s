@@ -219,7 +219,7 @@ export class Player {
         // height, the 130px jump apex becomes 13 world units (~9 body
         // heights) and Snacky leaves the camera frame. worldHeightY()
         // applies HEIGHT_SCALE (0.25): apex ≈ 2 body heights.
-        const y = worldHeightY(this.y, 60);
+        const y = worldHeightY(this.y, this.height);
 
         m.position.set(this.worldX, y, 0);
 

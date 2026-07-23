@@ -194,6 +194,21 @@ export function createPitMesh(span) {
     return g;
 }
 
+// Entitás-mesh GPU-erőforrásainak felszabadítása.
+// A gyártófüggvények minden híváskor FRIS geometriát és anyagot
+// hoznak létre, így a dispose biztonságos (nincs megosztott erőforrás).
+// Kezeli a Group-okat (rekurzívan) és a tömbös anyagokat is.
+export function disposeMesh(root) {
+    root.traverse((obj) => {
+        if (!obj.isMesh) return;
+        if (obj.geometry) obj.geometry.dispose();
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        for (const m of mats) {
+            if (m) m.dispose();
+        }
+    });
+}
+
 export function createObstacleMesh(type) {
     const g = new THREE.Group();
     const wood  = new THREE.MeshStandardMaterial({ color: 0xB0793C, roughness: 0.8 });
