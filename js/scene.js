@@ -17,7 +17,7 @@ export class SceneManager {
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color('#0B0B2B');
-        this.scene.fog = new THREE.Fog('#0B0B2B', 30, 90);
+        this.scene.fog = new THREE.Fog('#0B0B2B', 45, 110); // matches THEMES_3D[0] (night)
 
         this.baseFov = 60;
         this.camera = new THREE.PerspectiveCamera(
@@ -80,6 +80,13 @@ export class SceneManager {
         this.scene.fog.color.set(fogColor);
         this.scene.fog.near = near;
         this.scene.fog.far = far;
+    }
+
+    applyThemeColors({ hemiSky, hemiGround, sunColor, sunIntensity }) {
+        this.hemi.color.set(hemiSky);
+        this.hemi.groundColor.set(hemiGround);
+        this.sun.color.set(sunColor);
+        this.sun.intensity = sunIntensity;
     }
 
     render() {

@@ -602,7 +602,8 @@ export class Game {
         // ── Milestone check (theme changes) ──
         if (this.currentMilestone < this.milestoneThresholds.length &&
             this.score >= this.milestoneThresholds[this.currentMilestone]) {
-            // Trigger theme change (Task 7 wires world.setTheme)
+            // Trigger theme change: 1000→dawn(1), 3000→day(2), 5000→sunset(3), 8000→neon(4)
+            if (this.world) this.world.setTheme(Math.min(this.currentMilestone + 1, 4));
             this.milestoneBanner = {
                 text: this.milestoneNames[this.currentMilestone],
                 timer: 150 // ~2.5 seconds

@@ -7,6 +7,32 @@ import * as THREE from 'three';
 
 const ROAD_LEN = 20; // world units per segment
 
+// Procedural lit-window texture for buildings (Task 7)
+export function createBuildingTexture(litRatio = 0.35, litColor = '#FFE66D') {
+    const c = document.createElement('canvas');
+    c.width = 64; c.height = 128;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#12121F';
+    ctx.fillRect(0, 0, 64, 128);
+    for (let y = 6; y < 122; y += 12) {
+        for (let x = 6; x < 58; x += 12) {
+            ctx.fillStyle = Math.random() < litRatio ? litColor : '#0A0A14';
+            ctx.fillRect(x, y, 7, 8);
+        }
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.magFilter = THREE.NearestFilter;
+    return tex;
+}
+
+// One shared texture for ALL buildings: created once, never disposed
+// (per-building dispose would kill it for every other building).
+let _sharedBuildingTex = null;
+function getBuildingTexture() {
+    if (!_sharedBuildingTex) _sharedBuildingTex = createBuildingTexture();
+    return _sharedBuildingTex;
+}
+
 export function createRoadSegment() {
     const g = new THREE.Group();
 
@@ -50,7 +76,13 @@ export function createBuilding() {
     const shade = 0x1A1A2E + Math.floor(Math.random() * 0x202020);
     const b = new THREE.Mesh(
         new THREE.BoxGeometry(w, h, d),
-        new THREE.MeshStandardMaterial({ color: shade, roughness: 0.9 })
+        new THREE.MeshStandardMaterial({
+            color: shade,
+            roughness: 0.9,
+            emissiveMap: getBuildingTexture(), // shared module-level texture
+            emissive: 0xFFFFFF,
+            emissiveIntensity: 1.0,
+        })
     );
     b.position.y = h / 2;
     return b;
