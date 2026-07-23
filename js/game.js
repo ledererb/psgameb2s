@@ -257,7 +257,10 @@ export class Game {
         this.activeDoubleScore = { active: false, timer: 0, duration: 600 };
         this.powerUpTimer = 300;
 
-        // Reset pits
+        // Reset pits (remove 3D meshes first)
+        for (const pit of this.pits) {
+            this.sceneMgr.scene.remove(pit.mesh);
+        }
         this.pits = [];
         this.pitTimer = 200;
 
@@ -457,7 +460,10 @@ export class Game {
                     if (entry === 'pit') {
                         // Spawn a pit
                         const gapWidth = randomBetween(70, 110);
-                        this.pits.push(new Pit(CANVAS_WIDTH + 60, gapWidth));
+                        // Task 9: proper lane choreography
+                        const pit = new Pit(CANVAS_WIDTH + 60, gapWidth, randomBetween(0, 2));
+                        this.sceneMgr.scene.add(pit.mesh);
+                        this.pits.push(pit);
                     } else {
                         // Spawn obstacle of the given type
                         const type = entry;
@@ -505,7 +511,11 @@ export class Game {
                 const safeToSpawn = !lastObs || (CANVAS_WIDTH + 60 - lastObs.x) > 200;
                 if (safeToSpawn) {
                     const gapWidth = randomBetween(70, 110);
-                    this.pits.push(new Pit(CANVAS_WIDTH + 60, gapWidth));
+                    // 80% single random lane, 20% full-width (lane -1)
+                    const lane = Math.random() < 0.8 ? randomBetween(0, 2) : -1;
+                    const pit = new Pit(CANVAS_WIDTH + 60, gapWidth, lane);
+                    this.sceneMgr.scene.add(pit.mesh);
+                    this.pits.push(pit);
                 }
                 this.pitTimer = randomBetween(300, 500);
             }
@@ -544,7 +554,10 @@ export class Game {
         for (let i = this.pits.length - 1; i >= 0; i--) {
             this.pits[i].update(this.gameSpeed);
             if (this.pits[i].isOffScreen()) {
+                this.sceneMgr.scene.remove(this.pits[i].mesh);
                 this.pits.splice(i, 1);
+            } else {
+                this.pits[i].syncMesh();
             }
         }
 
@@ -717,10 +730,7 @@ export class Game {
             ctx.stroke();
         }
 
-        // ── Pits (ground level, drawn before obstacles) ──
-        for (const pit of this.pits) {
-            pit.draw(ctx);
-        }
+        // ── Pits are rendered in 3D (WebGL layer) — no canvas draw here
 
         // Collectibles are rendered in 3D (WebGL layer) — no canvas draw here
 
@@ -1244,10 +1254,12 @@ export class Game {
         }
 
         // ── Pit collisions ──
-        // Only dangerous when player is on ground and overlaps pit hitbox
+        // Only dangerous when player is on ground, in the pit's lane,
+        // and overlaps the pit hitbox
         for (const pit of this.pits) {
             if (pit.passed) continue;
-            if (this.player.isOnGround) {
+            const sameLane = pit.lanes.includes(this.player.lane);
+            if (sameLane && this.player.isOnGround) {
                 const pitHB = pit.getHitbox();
                 if (checkCollision(ph, pitHB)) {
                     if (this.player.hit()) {
@@ -1271,6 +1283,31 @@ export class Game {
             // Mark pit as passed
             if (this.player.x > pit.x + pit.gapWidth && !pit.passed) {
                 pit.passed = true;
+
+                // ── Near-miss: low jump over a pit in the player's lane ──
+                // Triggers only if the player survived the pit (damage sets
+                // pit.passed above, so this branch is skipped on a hit).
+                // Approximation of "feet skimmed the gap": at the moment of
+                // passing, the player is airborne with their bottom less than
+                // 30 logical px above the ground.
+                if (sameLane && this.nearMissCooldown <= 0 && !this.player.isInvincible &&
+                    !this.player.isOnGround && (GROUND_Y - this.player.y - 60) < 30) {
+                    const nearMissBonus = 50;
+                    this.score += nearMissBonus;
+                    this.floatingTexts.push(
+                        new FloatingText(
+                            this.player.x + this.player.width / 2,
+                            this.player.y - 10,
+                            'CLOSE! +50', '#00DDFF'
+                        )
+                    );
+                    this._spawnParticles(
+                        this.player.x + this.player.width / 2,
+                        this.player.y + this.player.height / 2,
+                        4, '#00DDFF', 0.6
+                    );
+                    this.nearMissCooldown = 30; // prevent spam
+                }
             }
         }
 

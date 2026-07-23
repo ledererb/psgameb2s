@@ -151,6 +151,17 @@ export function createPowerUpMesh(type) {
     return g;
 }
 
+export function createPitMesh(span) {
+    // Dark jagged hole decal + inner walls illusion
+    const w = span === 3 ? 6.6 : 2.0;
+    const g = new THREE.Group();
+    const hole = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, 1),
+        new THREE.MeshStandardMaterial({ color: 0x05050A, roughness: 1 }));
+    hole.position.y = 0.02;
+    g.add(hole);
+    return g;
+}
+
 export function createObstacleMesh(type) {
     const g = new THREE.Group();
     const wood  = new THREE.MeshStandardMaterial({ color: 0xB0793C, roughness: 0.8 });
