@@ -18,7 +18,6 @@ import {
 import { Player } from './player.js';
 import { Obstacle } from './obstacle.js';
 import { Collectible } from './collectible.js';
-import { ParallaxBackground } from './background.js';
 import { Pit } from './pit.js';
 import { PowerUp } from './powerup.js';
 import { TrailEffect, WeatherSystem } from './effects.js';
@@ -100,10 +99,10 @@ class FloatingText {
 // ── Main Game Class ──
 
 export class Game {
-    constructor(audio) {
+    constructor(audio, world) {
         this.audio = audio;
+        this.world = world;
         this.player = new Player();
-        this.background = new ParallaxBackground();
         this.obstacles = [];
         this.collectibles = [];
         this.particles = [];
@@ -280,8 +279,8 @@ export class Game {
         this.missionScoreAtStart = 0;
         this.completedMissions = 0;
 
-        // Reset background theme
-        this.background = new ParallaxBackground();
+        // Reset 3D world
+        if (this.world) this.world.reset();
     }
 
     // ── Input ──
@@ -395,9 +394,6 @@ export class Game {
                 }
             }
         }
-
-        // Background
-        this.background.update(this.gameSpeed);
 
         // Player
         this.player.update();
@@ -555,8 +551,7 @@ export class Game {
         // ── Milestone check (theme changes) ──
         if (this.currentMilestone < this.milestoneThresholds.length &&
             this.score >= this.milestoneThresholds[this.currentMilestone]) {
-            // Trigger theme change
-            this.background.setTheme(this.currentMilestone + 1);
+            // Trigger theme change (Task 7 wires world.setTheme)
             this.milestoneBanner = {
                 text: this.milestoneNames[this.currentMilestone],
                 timer: 150 // ~2.5 seconds
@@ -670,9 +665,6 @@ export class Game {
 
         // Clear
         ctx.clearRect(-5, -5, CANVAS_WIDTH + 10, CANVAS_HEIGHT + 10);
-
-        // Background
-        this.background.draw(ctx);
 
         // Speed lines
         for (const line of this.speedLines) {

@@ -5,17 +5,20 @@
 // Now includes slide/duck input handling.
 // ============================================
 
-import { CANVAS_WIDTH, CANVAS_HEIGHT, formatScore } from './utils.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, INITIAL_SPEED, MAX_SPEED, formatScore } from './utils.js';
 import { Game } from './game.js';
 import { AudioManager } from './audio.js';
 import { Leaderboard } from './leaderboard.js';
+import { SceneManager } from './scene.js';
+import { World3D } from './world.js';
 
 // ── State ──
 
 let state = 'menu'; // 'menu' | 'playing' | 'gameover'
-let canvas, ctx;
+let canvas;
 let overlayCanvas, overlayCtx;
 let game, audio, leaderboard;
+let sceneMgr, world;
 
 // Slide key tracking
 let slideKeyDown = false;
@@ -36,15 +39,12 @@ let highScoreEl;
 
 function init() {
     canvas = document.getElementById('gameCanvas');
-    ctx = canvas.getContext('2d');
     overlayCanvas = document.getElementById('overlayCanvas');
     overlayCtx = overlayCanvas.getContext('2d');
 
-    // HiDPI/Retina support: scale canvas backing store
+    // HiDPI/Retina support: scale overlay backing store
+    // (the main canvas is managed by SceneManager's WebGL renderer)
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = CANVAS_WIDTH * dpr;
-    canvas.height = CANVAS_HEIGHT * dpr;
-    ctx.scale(dpr, dpr);
     overlayCanvas.width = CANVAS_WIDTH * dpr;
     overlayCanvas.height = CANVAS_HEIGHT * dpr;
     overlayCtx.scale(dpr, dpr);
@@ -63,7 +63,9 @@ function init() {
     // Create managers
     audio = new AudioManager();
     leaderboard = new Leaderboard();
-    game = new Game(audio);
+    sceneMgr = new SceneManager(canvas);
+    world = new World3D(sceneMgr);
+    game = new Game(audio, world);
 
     // Game over callback
     game.onGameOver = (score) => {
@@ -288,13 +290,8 @@ function handleResize() {
     overlayCanvas.style.width = `${w}px`;
     overlayCanvas.style.height = `${h}px`;
 
-    // Update backing store for current DPR (handles display changes)
+    // Update overlay backing store for current DPR (handles display changes)
     const dpr = window.devicePixelRatio || 1;
-    if (canvas.width !== CANVAS_WIDTH * dpr) {
-        canvas.width = CANVAS_WIDTH * dpr;
-        canvas.height = CANVAS_HEIGHT * dpr;
-        ctx.scale(dpr, dpr);
-    }
     if (overlayCanvas.width !== CANVAS_WIDTH * dpr) {
         overlayCanvas.width = CANVAS_WIDTH * dpr;
         overlayCanvas.height = CANVAS_HEIGHT * dpr;
@@ -308,14 +305,24 @@ function loop() {
     if (state === 'playing') {
         game.update();
         game.draw(overlayCtx);
+        world.update(game.getSpeed());
+        sceneMgr.updateCamera(
+            (game.getSpeed() - INITIAL_SPEED) / (MAX_SPEED - INITIAL_SPEED), // speedNorm 0..1
+            0                                                                // playerWorldX: Task 3-ig 0
+        );
+        sceneMgr.render();
     } else if (state === 'menu') {
         drawMenuBackground();
+        world.update(1.5); // lassú csúszás menüben is
+        sceneMgr.updateCamera(0, 0);
+        sceneMgr.render();
     } else if (state === 'gameover') {
         // Draw frozen game state behind overlay
         game.draw(overlayCtx);
         // Dark overlay on canvas
         overlayCtx.fillStyle = 'rgba(0, 0, 0, 0.4)';
         overlayCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        sceneMgr.render();
     }
 
     requestAnimationFrame(loop);
