@@ -65,7 +65,7 @@ function init() {
     leaderboard = new Leaderboard();
     sceneMgr = new SceneManager(canvas);
     world = new World3D(sceneMgr);
-    game = new Game(audio, world);
+    game = new Game(audio, world, sceneMgr);
 
     // Game over callback
     game.onGameOver = (score) => {
@@ -103,6 +103,18 @@ function init() {
                 }
             }
         }
+
+        // Lane switch left
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+            e.preventDefault();
+            if (state === 'playing') game.handleLaneChange(-1);
+        }
+
+        // Lane switch right
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+            e.preventDefault();
+            if (state === 'playing') game.handleLaneChange(1);
+        }
     });
 
     document.addEventListener('keyup', (e) => {
@@ -133,6 +145,7 @@ function init() {
 
         const touch = e.touches[0];
         const deltaY = touch.clientY - touchStartY;
+        const deltaX = touch.clientX - touchStartX;
 
         // Swipe down detected — ground pound (in air) or slide (on ground)
         if (deltaY > 30 && !touchIsSliding) {
@@ -142,6 +155,12 @@ function init() {
             } else {
                 game.handleSlide();
             }
+        }
+
+        // Horizontal swipe — lane switch
+        if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY) && !touchIsSliding) {
+            game.handleLaneChange(deltaX > 0 ? 1 : -1);
+            touchStartX = touch.clientX; // re-arm for multi-lane swipes
         }
     }, { passive: false });
 
@@ -308,7 +327,7 @@ function loop() {
         world.update(game.getSpeed());
         sceneMgr.updateCamera(
             (game.getSpeed() - INITIAL_SPEED) / (MAX_SPEED - INITIAL_SPEED), // speedNorm 0..1
-            0                                                                // playerWorldX: Task 3-ig 0
+            game.player.worldX                                               // camera follows lane
         );
         sceneMgr.render();
     } else if (state === 'menu') {

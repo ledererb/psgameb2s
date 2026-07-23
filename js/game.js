@@ -99,10 +99,12 @@ class FloatingText {
 // ── Main Game Class ──
 
 export class Game {
-    constructor(audio, world) {
+    constructor(audio, world, sceneMgr) {
         this.audio = audio;
         this.world = world;
+        this.sceneMgr = sceneMgr;
         this.player = new Player();
+        if (this.sceneMgr) this.sceneMgr.scene.add(this.player.mesh);
         this.obstacles = [];
         this.collectibles = [];
         this.particles = [];
@@ -213,6 +215,7 @@ export class Game {
 
     reset() {
         this.player.reset();
+        this.player.syncMesh();
         this.obstacles = [];
         this.collectibles = [];
         this.particles = [];
@@ -298,6 +301,13 @@ export class Game {
                 this.player.y + this.player.height,
                 6, '#AED6F1', 0.8
             );
+        }
+    }
+
+    handleLaneChange(dir) {
+        if (!this.isRunning) return;
+        if (this.player.changeLane(dir)) {
+            this.audio.playJump(); // short whoosh placeholder; fine for now
         }
     }
 
@@ -651,6 +661,9 @@ export class Game {
             }
             this.player.setLookTarget(nearestX, nearestY);
         }
+
+        // Sync 3D mesh with logical state (end of frame)
+        this.player.syncMesh();
     }
 
     // ── Draw (one frame) ──
@@ -696,10 +709,9 @@ export class Game {
             o.draw(ctx);
         }
 
-        // Player
-        this.player.draw(ctx);
+        // Player is rendered in 3D (WebGL layer) — no canvas draw here
 
-        // ── Trail effect (after player) ──
+        // ── Trail effect ──
         this.trailEffect.draw(ctx);
 
         // Particles
