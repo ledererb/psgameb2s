@@ -175,7 +175,7 @@ export class Game {
         ];
 
         // ── Milestones (theme changes) ──
-        this.milestoneThresholds = [1000, 3000, 5000, 8000];
+        this.milestoneThresholds = [2000, 6000, 12000, 20000];
         this.currentMilestone = 0;
         this.milestoneBanner = null; // { text, timer }
         this.milestoneNames = ['🌅 HAJNAL ÉRA!', '☀️ NAPPALI ÉRA!', '🌆 NAPLEMENTE ÉRA!', '🌃 NEON VÁROS!'];
@@ -601,7 +601,7 @@ export class Game {
         // ── Milestone check (theme changes) ──
         if (this.currentMilestone < this.milestoneThresholds.length &&
             this.score >= this.milestoneThresholds[this.currentMilestone]) {
-            // Trigger theme change: 1000→dawn(1), 3000→day(2), 5000→sunset(3), 8000→neon(4)
+            // Trigger theme change: 2000→dawn(1), 6000→day(2), 12000→sunset(3), 20000→neon(4)
             if (this.world) this.world.setTheme(Math.min(this.currentMilestone + 1, 4));
             this.milestoneBanner = {
                 text: this.milestoneNames[this.currentMilestone],
