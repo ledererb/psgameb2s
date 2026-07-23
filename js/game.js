@@ -162,12 +162,15 @@ export class Game {
         this.nextBossScore = 5000;
         this.bossRestTimer = 0;
         this.bossPatterns = [
-            // Pattern 1: Jump-Slide alternating (predictable rhythm)
-            ['crate', 'barrier', 'crate', 'barrier', 'barrel', 'crate', 'barrel', 'crate'],
-            // Pattern 2: Rolling barrels + jumps (no slides after fast obstacles)
-            ['rolling_barrel', 'crate', 'barrel', 'crate', 'rolling_barrel', 'barrel', 'crate', 'barrel'],
-            // Pattern 3: Mixed with pits (generous spacing, no barrier→tall combos)
-            ['crate', 'pit', 'barrel', 'crate', 'pit', 'barrel', 'crate', 'pit']
+            // 1: Zigzag — alternating lanes, always one side free
+            [{ lane: 0, type: 'crate' }, { lane: 2, type: 'crate' }, { lane: 0, type: 'barrel' },
+             { lane: 2, type: 'barrel' }, { lane: 1, type: 'barrier' }, { lane: 0, type: 'crate' }],
+            // 2: Pits + barrels
+            [{ lane: 1, type: 'pit' }, { lane: 0, type: 'barrel' }, { lane: 2, type: 'pit' },
+             { lane: 1, type: 'barrel' }, { lane: 0, type: 'rolling_barrel' }, { lane: 2, type: 'crate' }],
+            // 3: Wide barriers — free lane alternates
+            [{ lane: 0, type: 'barrier', span: 2 }, { lane: 1, type: 'crate' }, { lane: 2, type: 'barrier' },
+             { lane: 0, type: 'crate' }, { lane: 1, type: 'barrier', span: 2 }, { lane: 2, type: 'barrel' }],
         ];
 
         // ── Milestones (theme changes) ──
@@ -457,18 +460,13 @@ export class Game {
             if (this.bossSpawnTimer <= 0) {
                 if (this.bossPatternStep < this.bossCurrentPattern.length) {
                     const entry = this.bossCurrentPattern[this.bossPatternStep];
-                    if (entry === 'pit') {
-                        // Spawn a pit
+                    if (entry.type === 'pit') {
                         const gapWidth = randomBetween(70, 110);
-                        // Task 9: proper lane choreography
-                        const pit = new Pit(CANVAS_WIDTH + 60, gapWidth, randomBetween(0, 2));
+                        const pit = new Pit(CANVAS_WIDTH + 60, gapWidth, entry.lane);
                         this.sceneMgr.scene.add(pit.mesh);
                         this.pits.push(pit);
                     } else {
-                        // Spawn obstacle of the given type
-                        const type = entry;
-                        // Task 9: proper lane choreography
-                        const obs = new Obstacle(CANVAS_WIDTH + 60, type, randomBetween(0, 2));
+                        const obs = new Obstacle(CANVAS_WIDTH + 60, entry.type, entry.lane, entry.span || 1);
                         this.sceneMgr.scene.add(obs.mesh);
                         this.obstacles.push(obs);
                     }
