@@ -216,6 +216,10 @@ export class Game {
     reset() {
         this.player.reset();
         this.player.syncMesh();
+        // Remove 3D obstacle meshes from the scene before dropping references
+        for (const obs of this.obstacles) {
+            this.sceneMgr.scene.remove(obs.mesh);
+        }
         this.obstacles = [];
         this.collectibles = [];
         this.particles = [];
@@ -447,7 +451,10 @@ export class Game {
                     } else {
                         // Spawn obstacle of the given type
                         const type = entry;
-                        this.obstacles.push(new Obstacle(CANVAS_WIDTH + 60, type));
+                        // Task 9: proper lane choreography
+                        const obs = new Obstacle(CANVAS_WIDTH + 60, type, randomBetween(0, 2));
+                        this.sceneMgr.scene.add(obs.mesh);
+                        this.obstacles.push(obs);
                     }
                     this.bossPatternStep++;
                     this.bossSpawnTimer = 65; // safe gap between boss spawns
@@ -514,7 +521,10 @@ export class Game {
         for (let i = this.obstacles.length - 1; i >= 0; i--) {
             this.obstacles[i].update(this.gameSpeed);
             if (this.obstacles[i].isOffScreen()) {
+                this.sceneMgr.scene.remove(this.obstacles[i].mesh);
                 this.obstacles.splice(i, 1);
+            } else {
+                this.obstacles[i].syncMesh();
             }
         }
 
@@ -704,10 +714,7 @@ export class Game {
             pu.draw(ctx);
         }
 
-        // Obstacles
-        for (const o of this.obstacles) {
-            o.draw(ctx);
-        }
+        // Obstacles are rendered in 3D (WebGL layer) — no canvas draw here
 
         // Player is rendered in 3D (WebGL layer) — no canvas draw here
 
@@ -1058,7 +1065,35 @@ export class Game {
         }
 
         this.lastObstacleType = type;
-        this.obstacles.push(new Obstacle(CANVAS_WIDTH + 60, type));
+
+        const span = (type === 'barrier' && Math.random() < 0.4) ? 2 : 1;
+        const lane = this._pickSafeLane(type, CANVAS_WIDTH + 60, span);
+        if (lane === null) {
+            this.obstacleTimer = 30; // try again shortly
+            return;
+        }
+        const obs = new Obstacle(CANVAS_WIDTH + 60, type, lane, span);
+        this.sceneMgr.scene.add(obs.mesh);
+        this.obstacles.push(obs);
+    }
+
+    /**
+     * Pick a lane that keeps at least one lane passable in the spawn window.
+     * Returns null if every lane would be blocked (spawn deferred).
+     */
+    _pickSafeLane(type, spawnX, span) {
+        const WINDOW = 60; // logical px — obstacles this close arrive simultaneously
+        const blocked = new Set();
+        for (const o of this.obstacles) {
+            if (Math.abs(o.x - spawnX) < WINDOW) {
+                for (const l of o.lanes) blocked.add(l);
+            }
+        }
+        const free = [0, 1, 2].filter(l => !blocked.has(l) && (span === 1 || !blocked.has(l + 1)) && (span === 1 || l + 1 <= 2));
+        if (free.length === 0) return null;
+        // If barrier spans 2, the third lane must stay free of tall obstacles nearby
+        const pick = free[randomBetween(0, free.length - 1)];
+        return pick;
     }
 
     _spawnCollectible() {
@@ -1120,8 +1155,10 @@ export class Game {
         // Obstacles
         for (const obs of this.obstacles) {
             if (obs.passed) continue;
+            const sameLane = obs.lanes.includes(this.player.lane);
             const oh = obs.getHitbox();
-            if (checkCollision(ph, oh)) {
+            // Lane-filtered collision: only same-lane obstacles can hurt
+            if (sameLane && checkCollision(ph, oh)) {
                 if (this.player.hit()) {
                     this.audio.playHit();
                     this.shakeDuration = 12;
@@ -1141,12 +1178,12 @@ export class Game {
                     if (this.player.lives <= 0) return;
                 }
             }
-            // Mark as passed for scoring (if player is past it)
+            // Mark as passed for scoring (all lanes count — you dodged by being elsewhere)
             if (this.player.x > obs.x + obs.width && !obs.passed) {
                 obs.passed = true;
 
-                // ── Near-miss detection ──
-                if (this.nearMissCooldown <= 0 && !this.player.isInvincible) {
+                // ── Near-miss detection (same lane only) ──
+                if (sameLane && this.nearMissCooldown <= 0 && !this.player.isInvincible) {
                     const oh = obs.getHitbox();
                     // Check vertical near-miss (player bottom near obstacle top, or vice versa)
                     const vertGap = Math.min(

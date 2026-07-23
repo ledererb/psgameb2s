@@ -97,3 +97,9 @@ export function logicalToWorldZ(x) {
 export function worldY(logicalYTop, logicalHeight) {
     return (GROUND_Y - logicalYTop - logicalHeight) * WORLD_SCALE;
 }
+
+export const HEIGHT_SCALE = 0.25; // visual vertical compression (jump apex ≈ 2 body heights)
+/** World y for an entity whose logical top is yTop, with visual height compression. */
+export function worldHeightY(logicalYTop, logicalHeight) {
+    return (GROUND_Y - logicalYTop - logicalHeight) * WORLD_SCALE * HEIGHT_SCALE;
+}

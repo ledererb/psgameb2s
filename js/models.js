@@ -116,3 +116,72 @@ export function createSnackyModel() {
 
     return { group, parts: { body, headGroup, armL, armR, legL, legR, scarf, pupilL, pupilR } };
 }
+
+export function createObstacleMesh(type) {
+    const g = new THREE.Group();
+    const wood  = new THREE.MeshStandardMaterial({ color: 0xB0793C, roughness: 0.8 });
+    const dark  = new THREE.MeshStandardMaterial({ color: 0x7A4F24, roughness: 0.8 });
+    const metal = new THREE.MeshStandardMaterial({ color: 0xE74C3C, roughness: 0.5 });
+    const blue  = new THREE.MeshStandardMaterial({ color: 0x4A69BD, roughness: 0.7 });
+
+    switch (type) {
+        case 'crate': {
+            const c = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.0, 1.0), wood);
+            c.position.y = 0.5; c.castShadow = true;
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.12, 1.06), dark);
+            frame.position.y = 0.5;
+            g.add(c, frame);
+            break;
+        }
+        case 'tall_crate': {
+            for (let i = 0; i < 2; i++) {
+                const c = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.95, 1.0), i ? dark : wood);
+                c.position.y = 0.5 + i * 0.95; c.castShadow = true;
+                g.add(c);
+            }
+            break;
+        }
+        case 'barrel': {
+            const b = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 1.2, 14), blue);
+            b.position.y = 0.6; b.castShadow = true;
+            g.add(b);
+            break;
+        }
+        case 'rolling_barrel': {
+            const b = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.8, 14), blue);
+            b.rotation.x = Math.PI / 2; // lies sideways, rolls
+            b.position.y = 0.5; b.castShadow = true;
+            b.name = 'roller';
+            g.add(b);
+            break;
+        }
+        case 'barrier': {
+            // Overhead striped bar on two posts (per-lane width 2.2 * span)
+            const bar = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.35, 0.35), metal);
+            bar.position.y = 1.5; bar.castShadow = true;
+            bar.name = 'bar';
+            g.add(bar);
+            for (const side of [-1, 1]) {
+                const post = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.5, 0.15), dark);
+                post.position.set(side * 1.05, 0.75, 0);
+                post.name = 'post' + (side < 0 ? 'L' : 'R');
+                g.add(post);
+            }
+            break;
+        }
+        case 'flying_bird': {
+            const body = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 10),
+                new THREE.MeshStandardMaterial({ color: 0x8E44AD, roughness: 0.6 }));
+            body.scale.set(1.3, 1, 1);
+            const wingGeo = new THREE.BoxGeometry(0.6, 0.06, 0.3);
+            const wingL = new THREE.Mesh(wingGeo, metal);
+            const wingR = new THREE.Mesh(wingGeo, metal);
+            wingL.position.set(-0.5, 0.1, 0);
+            wingR.position.set(0.5, 0.1, 0);
+            wingL.name = 'wingL'; wingR.name = 'wingR';
+            g.add(body, wingL, wingR);
+            break;
+        }
+    }
+    return g;
+}

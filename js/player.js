@@ -8,7 +8,7 @@
 import {
     GROUND_Y, GRAVITY, JUMP_FORCE, DOUBLE_JUMP_FORCE,
     PLAYER_X, INVINCIBILITY_DURATION, INITIAL_LIVES, MAX_LIVES,
-    LANES, worldY
+    LANES, worldHeightY
 } from './utils.js';
 import { createSnackyModel } from './models.js';
 
@@ -215,11 +215,11 @@ export class Player {
         this.worldX += (LANES[this.lane] - this.worldX) * 0.25;
 
         // Height above ground (standing height is 60 logical px).
-        // NOTE: worldY() uses WORLD_SCALE (0.1), which maps screen px to
-        // world DEPTH. Applied raw, the 130px jump apex becomes 13 world
-        // units (~9 body heights) and Snacky leaves the camera frame.
-        // Vertical scale 0.25 keeps the 2D proportion: apex ~2 body heights.
-        const y = worldY(this.y, 60) * 0.25;
+        // NOTE: raw WORLD_SCALE maps screen px to world DEPTH — applied to
+        // height, the 130px jump apex becomes 13 world units (~9 body
+        // heights) and Snacky leaves the camera frame. worldHeightY()
+        // applies HEIGHT_SCALE (0.25): apex ≈ 2 body heights.
+        const y = worldHeightY(this.y, 60);
 
         m.position.set(this.worldX, y, 0);
 
