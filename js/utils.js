@@ -82,3 +82,18 @@ export function roundRect(ctx, x, y, w, h, r) {
 export function formatScore(n) {
     return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
+
+// ── 3D world mapping ──
+export const LANE_WIDTH = 2.2;            // world units between lane centers
+export const LANES = [-LANE_WIDTH, 0, LANE_WIDTH]; // lane 0,1,2 -> world x
+export const WORLD_SCALE = 0.1;           // logical px -> world units
+
+/** Logical obstacle x (canvas-style, decreasing) -> world z. */
+export function logicalToWorldZ(x) {
+    return (PLAYER_X - x) * WORLD_SCALE;
+}
+
+/** Height above ground (world units) for an entity whose logical top is y. */
+export function worldY(logicalYTop, logicalHeight) {
+    return (GROUND_Y - logicalYTop - logicalHeight) * WORLD_SCALE;
+}

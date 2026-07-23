@@ -14,6 +14,7 @@ import { Leaderboard } from './leaderboard.js';
 
 let state = 'menu'; // 'menu' | 'playing' | 'gameover'
 let canvas, ctx;
+let overlayCanvas, overlayCtx;
 let game, audio, leaderboard;
 
 // Slide key tracking
@@ -36,12 +37,17 @@ let highScoreEl;
 function init() {
     canvas = document.getElementById('gameCanvas');
     ctx = canvas.getContext('2d');
+    overlayCanvas = document.getElementById('overlayCanvas');
+    overlayCtx = overlayCanvas.getContext('2d');
 
     // HiDPI/Retina support: scale canvas backing store
     const dpr = window.devicePixelRatio || 1;
     canvas.width = CANVAS_WIDTH * dpr;
     canvas.height = CANVAS_HEIGHT * dpr;
     ctx.scale(dpr, dpr);
+    overlayCanvas.width = CANVAS_WIDTH * dpr;
+    overlayCanvas.height = CANVAS_HEIGHT * dpr;
+    overlayCtx.scale(dpr, dpr);
 
     // Cache DOM
     menuScreen = document.getElementById('menu-screen');
@@ -279,6 +285,8 @@ function handleResize() {
     }
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
+    overlayCanvas.style.width = `${w}px`;
+    overlayCanvas.style.height = `${h}px`;
 
     // Update backing store for current DPR (handles display changes)
     const dpr = window.devicePixelRatio || 1;
@@ -287,6 +295,11 @@ function handleResize() {
         canvas.height = CANVAS_HEIGHT * dpr;
         ctx.scale(dpr, dpr);
     }
+    if (overlayCanvas.width !== CANVAS_WIDTH * dpr) {
+        overlayCanvas.width = CANVAS_WIDTH * dpr;
+        overlayCanvas.height = CANVAS_HEIGHT * dpr;
+        overlayCtx.scale(dpr, dpr);
+    }
 }
 
 // ── Main render loop ──
@@ -294,15 +307,15 @@ function handleResize() {
 function loop() {
     if (state === 'playing') {
         game.update();
-        game.draw(ctx);
+        game.draw(overlayCtx);
     } else if (state === 'menu') {
         drawMenuBackground();
     } else if (state === 'gameover') {
         // Draw frozen game state behind overlay
-        game.draw(ctx);
+        game.draw(overlayCtx);
         // Dark overlay on canvas
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        overlayCtx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        overlayCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     }
 
     requestAnimationFrame(loop);
@@ -316,33 +329,33 @@ function drawMenuBackground() {
     // Animate background slowly even on menu
     menuBgOffset += 0.02;
 
-    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    overlayCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Sky gradient
-    const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+    const grad = overlayCtx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
     grad.addColorStop(0, '#0B0B2B');
     grad.addColorStop(0.5, '#141452');
     grad.addColorStop(0.8, '#1A2466');
     grad.addColorStop(1, '#2C3E50');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    overlayCtx.fillStyle = grad;
+    overlayCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Stars
-    ctx.fillStyle = 'rgba(255,255,230,0.4)';
+    overlayCtx.fillStyle = 'rgba(255,255,230,0.4)';
     for (let i = 0; i < 40; i++) {
         const sx = (i * 97 + menuBgOffset * 10) % CANVAS_WIDTH;
         const sy = (i * 53) % (CANVAS_HEIGHT * 0.6);
         const size = 0.5 + (i % 3) * 0.5;
-        ctx.beginPath();
-        ctx.arc(sx, sy, size, 0, Math.PI * 2);
-        ctx.fill();
+        overlayCtx.beginPath();
+        overlayCtx.arc(sx, sy, size, 0, Math.PI * 2);
+        overlayCtx.fill();
     }
 
     // Simple ground
-    ctx.fillStyle = '#2c3e50';
-    ctx.fillRect(0, 320, CANVAS_WIDTH, 80);
-    ctx.fillStyle = '#8E8E8E';
-    ctx.fillRect(0, 320, CANVAS_WIDTH, 4);
+    overlayCtx.fillStyle = '#2c3e50';
+    overlayCtx.fillRect(0, 320, CANVAS_WIDTH, 80);
+    overlayCtx.fillStyle = '#8E8E8E';
+    overlayCtx.fillRect(0, 320, CANVAS_WIDTH, 4);
 }
 
 // ── Boot ──
