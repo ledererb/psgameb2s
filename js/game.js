@@ -312,12 +312,8 @@ export class Game {
             this.audio.playJump();
         } else if (result === 'doubleJump') {
             this.audio.playDoubleJump();
-            // Double jump particles
-            this._spawnParticles(
-                this.player.x + this.player.width / 2,
-                this.player.y + this.player.height,
-                6, '#AED6F1', 0.8
-            );
+            // Double jump particles (projected from player mesh)
+            this._spawnParticlesAt(this.player.mesh, 6, '#AED6F1', 0.8);
         }
     }
 
@@ -347,11 +343,7 @@ export class Game {
         const result = this.player.groundPound();
         if (result === 'groundPound') {
             this.shakeDuration = 10;
-            this._spawnParticles(
-                this.player.x + this.player.width / 2,
-                this.player.y + this.player.height,
-                8, '#FFD700', 1.0
-            );
+            this._spawnParticlesAt(this.player.mesh, 8, '#FFD700', 1.0);
         }
     }
 
@@ -709,9 +701,9 @@ export class Game {
         this.player.syncMesh();
     }
 
-    // ── Draw (one frame) ──
+    // ── Draw overlay (one frame) — 2D HUD canvas on top of the WebGL layer ──
 
-    draw(ctx) {
+    drawOverlay(ctx) {
         ctx.save();
 
         // Apply screen shake
@@ -731,16 +723,6 @@ export class Game {
             ctx.lineTo((line.x + line.length) | 0, line.y);
             ctx.stroke();
         }
-
-        // ── Pits are rendered in 3D (WebGL layer) — no canvas draw here
-
-        // Collectibles are rendered in 3D (WebGL layer) — no canvas draw here
-
-        // Power-ups are rendered in 3D (WebGL layer) — no canvas draw here
-
-        // Obstacles are rendered in 3D (WebGL layer) — no canvas draw here
-
-        // Player is rendered in 3D (WebGL layer) — no canvas draw here
 
         // Particles
         for (const p of this.particles) {
@@ -1194,11 +1176,7 @@ export class Game {
                 if (this.player.hit()) {
                     this.audio.playHit();
                     this.shakeDuration = 12;
-                    this._spawnParticles(
-                        this.player.x + this.player.width / 2,
-                        this.player.y + this.player.height / 2,
-                        10, '#E74C3C', 1.2
-                    );
+                    this._spawnParticlesAt(this.player.mesh, 10, '#E74C3C', 1.2);
                     // Red screen flash on hit
                     this.screenFlash = { alpha: 0.3, color: 'rgba(231, 76, 60, 0.5)' };
                     obs.passed = true;
@@ -1226,18 +1204,8 @@ export class Game {
                     if (vertGap < 12 || horizGap < 8) {
                         const nearMissBonus = 50;
                         this.score += nearMissBonus;
-                        this.floatingTexts.push(
-                            new FloatingText(
-                                this.player.x + this.player.width / 2,
-                                this.player.y - 10,
-                                'CLOSE! +50', '#00DDFF'
-                            )
-                        );
-                        this._spawnParticles(
-                            this.player.x + this.player.width / 2,
-                            this.player.y + this.player.height / 2,
-                            4, '#00DDFF', 0.6
-                        );
+                        this._spawnFloatingTextAt(this.player.mesh, 'CLOSE! +50', '#00DDFF');
+                        this._spawnParticlesAt(this.player.mesh, 4, '#00DDFF', 0.6);
                         this.nearMissCooldown = 30; // prevent spam
                     }
                 }
@@ -1261,11 +1229,7 @@ export class Game {
                     if (this.player.hit()) {
                         this.audio.playHit();
                         this.shakeDuration = 15;
-                        this._spawnParticles(
-                            this.player.x + this.player.width / 2,
-                            this.player.y + this.player.height,
-                            12, '#8B4513', 1.5
-                        );
+                        this._spawnParticlesAt(this.player.mesh, 12, '#8B4513', 1.5);
                         pit.passed = true;
                         // Reset combo on hit
                         this.comboMultiplier = 1;
@@ -1290,18 +1254,8 @@ export class Game {
                     !this.player.isOnGround && (GROUND_Y - this.player.y - 60) < 30) {
                     const nearMissBonus = 50;
                     this.score += nearMissBonus;
-                    this.floatingTexts.push(
-                        new FloatingText(
-                            this.player.x + this.player.width / 2,
-                            this.player.y - 10,
-                            'CLOSE! +50', '#00DDFF'
-                        )
-                    );
-                    this._spawnParticles(
-                        this.player.x + this.player.width / 2,
-                        this.player.y + this.player.height / 2,
-                        4, '#00DDFF', 0.6
-                    );
+                    this._spawnFloatingTextAt(this.player.mesh, 'CLOSE! +50', '#00DDFF');
+                    this._spawnParticlesAt(this.player.mesh, 4, '#00DDFF', 0.6);
                     this.nearMissCooldown = 30; // prevent spam
                 }
             }
@@ -1316,24 +1270,17 @@ export class Game {
             if (checkCollision(ph, pu.getHitbox())) {
                 pu.collected = true;
 
-                const cx = (pu.x + pu.width / 2) | 0;
-                const cy = (pu.y + pu.height / 2) | 0;
-
-                // Activate the power-up
+                // Activate the power-up (effects projected from the power-up's 3D mesh)
                 if (pu.type === 'magnet') {
                     this.activeMagnet.active = true;
                     this.activeMagnet.timer = this.activeMagnet.duration;
-                    this._spawnParticles(cx, cy, 10, '#E74C3C', 1);
-                    this.floatingTexts.push(
-                        new FloatingText(cx, cy - 10, '🧲 MÁGNES!', '#E74C3C')
-                    );
+                    this._spawnParticlesAt(pu.mesh, 10, '#E74C3C', 1);
+                    this._spawnFloatingTextAt(pu.mesh, '🧲 MÁGNES!', '#E74C3C');
                 } else if (pu.type === 'double_score') {
                     this.activeDoubleScore.active = true;
                     this.activeDoubleScore.timer = this.activeDoubleScore.duration;
-                    this._spawnParticles(cx, cy, 10, '#9B59B6', 1);
-                    this.floatingTexts.push(
-                        new FloatingText(cx, cy - 10, '×2 DUPLA!', '#9B59B6')
-                    );
+                    this._spawnParticlesAt(pu.mesh, 10, '#9B59B6', 1);
+                    this._spawnFloatingTextAt(pu.mesh, '×2 DUPLA!', '#9B59B6');
                 }
 
                 this.audio.playCollect();
@@ -1351,9 +1298,7 @@ export class Game {
             if (checkCollision(ph, col.getHitbox())) {
                 col.collected = true;
 
-                const cx = col.x + col.width / 2;
-                const cy = col.y + col.height / 2;
-
+                // Effects are projected from the collectible's 3D mesh position
                 if (col.type === 'hotdog') {
                     // Combo-enhanced scoring with double score power-up
                     const basePoints = HOTDOG_POINTS;
@@ -1367,12 +1312,10 @@ export class Game {
                     // Effects
                     this.audio.playCollect();
                     // Mustard + ketchup colored particles
-                    this._spawnParticles(cx, cy, 4, '#F1C40F', 1);
-                    this._spawnParticles(cx, cy, 3, '#E74C3C', 0.8);
-                    this._spawnParticles(cx, cy, 2, '#D4A050', 0.6);
-                    this.floatingTexts.push(
-                        new FloatingText(cx, cy - 10, `+${multiplied}`, '#F1C40F')
-                    );
+                    this._spawnParticlesAt(col.mesh, 4, '#F1C40F', 1);
+                    this._spawnParticlesAt(col.mesh, 3, '#E74C3C', 0.8);
+                    this._spawnParticlesAt(col.mesh, 2, '#D4A050', 0.6);
+                    this._spawnFloatingTextAt(col.mesh, `+${multiplied}`, '#F1C40F');
                     // Gold screen flash
                     this.screenFlash = { alpha: 0.12, color: 'rgba(241, 196, 15, 0.4)' };
                     // Trigger Snacky happy face
@@ -1385,10 +1328,8 @@ export class Game {
                 } else if (col.type === 'donut') {
                     this.player.addLife();
                     this.audio.playExtraLife();
-                    this._spawnParticles(cx, cy, 12, '#FF69B4', 1.2);
-                    this.floatingTexts.push(
-                        new FloatingText(cx, cy - 10, '+1 ❤️', '#FF69B4')
-                    );
+                    this._spawnParticlesAt(col.mesh, 12, '#FF69B4', 1.2);
+                    this._spawnFloatingTextAt(col.mesh, '+1 ❤️', '#FF69B4');
                 }
 
                 this.sceneMgr.scene.remove(col.mesh);
@@ -1403,6 +1344,18 @@ export class Game {
         for (let i = 0; i < count; i++) {
             this.particles.push(new Particle(x, y, color, speed));
         }
+    }
+
+    // ── Projected spawn helpers (3D world position → overlay coords) ──
+
+    _spawnFloatingTextAt(mesh, text, color) {
+        const p = this.sceneMgr.projectToScreen(mesh.position, { x: 0, y: 0 });
+        this.floatingTexts.push(new FloatingText(p.x, p.y - 10, text, color));
+    }
+
+    _spawnParticlesAt(mesh, count, color, speed) {
+        const p = this.sceneMgr.projectToScreen(mesh.position, { x: 0, y: 0 });
+        this._spawnParticles(p.x, p.y, count, color, speed);
     }
 
     // ── Getters ──

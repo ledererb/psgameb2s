@@ -323,7 +323,7 @@ function handleResize() {
 function loop() {
     if (state === 'playing') {
         game.update();
-        game.draw(overlayCtx);
+        game.drawOverlay(overlayCtx);
         world.update(game.getSpeed());
         sceneMgr.updateCamera(
             (game.getSpeed() - INITIAL_SPEED) / (MAX_SPEED - INITIAL_SPEED), // speedNorm 0..1
@@ -337,7 +337,7 @@ function loop() {
         sceneMgr.render();
     } else if (state === 'gameover') {
         // Draw frozen game state behind overlay
-        game.draw(overlayCtx);
+        game.drawOverlay(overlayCtx);
         // Dark overlay on canvas
         overlayCtx.fillStyle = 'rgba(0, 0, 0, 0.4)';
         overlayCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
