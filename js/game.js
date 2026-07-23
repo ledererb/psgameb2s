@@ -12,7 +12,7 @@ import {
     HOTDOG_POINTS, DONUT_CHANCE,
     MIN_OBSTACLE_GAP, MAX_OBSTACLE_GAP,
     MIN_COLLECTIBLE_GAP, MAX_COLLECTIBLE_GAP,
-    checkCollision, randomBetween, formatScore
+    checkCollision, randomBetween, formatScore, worldHeightY
 } from './utils.js';
 
 import { Player } from './player.js';
@@ -20,7 +20,7 @@ import { Obstacle } from './obstacle.js';
 import { Collectible } from './collectible.js';
 import { Pit } from './pit.js';
 import { PowerUp } from './powerup.js';
-import { TrailEffect, WeatherSystem } from './effects.js';
+import { TrailEffect3D, WeatherSystem3D } from './effects.js';
 
 // ── Particle class for collect/hit effects ──
 
@@ -176,9 +176,9 @@ export class Game {
         this.milestoneBanner = null; // { text, timer }
         this.milestoneNames = ['🌅 HAJNAL ÉRA!', '☀️ NAPPALI ÉRA!', '🌆 NAPLEMENTE ÉRA!', '🌃 NEON VÁROS!'];
 
-        // ── Visual effects ──
-        this.trailEffect = new TrailEffect();
-        this.weatherSystem = new WeatherSystem(CANVAS_WIDTH, CANVAS_HEIGHT);
+        // ── Visual effects (3D) ──
+        this.trailEffect = new TrailEffect3D(this.sceneMgr.scene);
+        this.weatherSystem = new WeatherSystem3D(this.sceneMgr.scene);
 
         // ── Near-miss tracking ──
         this.nearMissCooldown = 0;
@@ -279,9 +279,9 @@ export class Game {
         this.currentMilestone = 0;
         this.milestoneBanner = null;
 
-        // Reset effects
-        this.trailEffect = new TrailEffect();
-        this.weatherSystem = new WeatherSystem(CANVAS_WIDTH, CANVAS_HEIGHT);
+        // Reset effects (reuses pooled 3D objects — no re-allocation)
+        this.trailEffect.reset();
+        this.weatherSystem.reset();
 
         // Reset near-miss
         this.nearMissCooldown = 0;
@@ -628,6 +628,8 @@ export class Game {
             this.shakeX = 0;
             this.shakeY = 0;
         }
+        // Feed shake into the 3D camera
+        this.sceneMgr.setShake(this.shakeX, this.shakeY);
 
         // Speed lines at high speed
         if (this.gameSpeed > 9) {
@@ -647,10 +649,11 @@ export class Game {
             }
         }
 
-        // ── Trail effect ──
+        // ── Trail effect (3D, behind Snacky) ──
         this.trailEffect.update(
-            this.player.x, this.player.y,
-            this.player.width, this.player.height,
+            this.player.worldX,
+            worldHeightY(this.player.y, 60),
+            0,
             this.gameSpeed
         );
 
@@ -741,9 +744,6 @@ export class Game {
 
         // Player is rendered in 3D (WebGL layer) — no canvas draw here
 
-        // ── Trail effect ──
-        this.trailEffect.draw(ctx);
-
         // Particles
         for (const p of this.particles) {
             p.draw(ctx);
@@ -753,9 +753,6 @@ export class Game {
         for (const ft of this.floatingTexts) {
             ft.draw(ctx);
         }
-
-        // ── Weather (on top of everything except HUD) ──
-        this.weatherSystem.draw(ctx);
 
         // ── Screen flash overlay ──
         if (this.screenFlash.alpha > 0.01) {
