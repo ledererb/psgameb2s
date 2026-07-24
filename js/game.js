@@ -556,7 +556,7 @@ export class Game {
                 this._removeMesh(this.pits[i].mesh);
                 this.pits.splice(i, 1);
             } else {
-                this.pits[i].syncMesh();
+                this.pits[i].syncMesh(this.score);
             }
         }
 

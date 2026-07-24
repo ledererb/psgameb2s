@@ -184,13 +184,61 @@ export function createPowerUpMesh(type) {
 }
 
 export function createPitMesh(span) {
-    // Flat dark hole decal stretched across the pit's lanes
+    // Mély lyuk-illúzió: "void" alj + belső falak + világító perem + gőz.
+    // A Group z-mérete a Pit-ben scale.z-vel nyúlik a gap logikai szélességére.
     const w = span === 3 ? 6.6 : 2.0;
     const g = new THREE.Group();
-    const hole = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, 1),
-        new THREE.MeshStandardMaterial({ color: 0x05050A, roughness: 1 }));
-    hole.position.y = 0.02;
-    g.add(hole);
+
+    // "Void" alj — fényképtelen, közel-fekete
+    const bottom = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, 1),
+        new THREE.MeshBasicMaterial({ color: 0x020208 }));
+    bottom.position.y = -0.6;
+    g.add(bottom);
+
+    // Belső oldalfalak (4), útszinttől az aljig
+    const wallMat = new THREE.MeshBasicMaterial({ color: 0x0A0A14 });
+    const wallH = 0.6, wallT = 0.06;
+    const front = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, wallT), wallMat);
+    front.position.set(0, -wallH / 2, 0.5 - wallT / 2);
+    const back = front.clone();
+    back.position.z = -0.5 + wallT / 2;
+    const left = new THREE.Mesh(new THREE.BoxGeometry(wallT, wallH, 1), wallMat);
+    left.position.set(-w / 2 + wallT / 2, -wallH / 2, 0);
+    const right = left.clone();
+    right.position.x = w / 2 - wallT / 2;
+    g.add(front, back, left, right);
+
+    // Világító perem (4 emissive csík az útszinten) — EGY megosztott anyag,
+    // így a pulzálás egy helyen állítható (userData.rimMat)
+    const rimMat = new THREE.MeshStandardMaterial({
+        color: 0xFF6B1A, emissive: 0xFF6B1A, emissiveIntensity: 2, roughness: 0.4
+    });
+    const rimW = 0.1;
+    const rimFront = new THREE.Mesh(new THREE.BoxGeometry(w, 0.04, rimW), rimMat);
+    rimFront.position.set(0, 0.03, 0.5 - rimW / 2);
+    const rimBack = rimFront.clone();
+    rimBack.position.z = -0.5 + rimW / 2;
+    const rimLeft = new THREE.Mesh(new THREE.BoxGeometry(rimW, 0.04, 1), rimMat);
+    rimLeft.position.set(-w / 2 + rimW / 2, 0.03, 0);
+    const rimRight = rimLeft.clone();
+    rimRight.position.x = w / 2 - rimW / 2;
+    g.add(rimFront, rimBack, rimLeft, rimRight);
+
+    // Felszálló gőz: 6 apró fényképtelen kocka, fázisban eltolt körkörös emelkedés.
+    // Megosztott anyag — a "kifakulás" méretezéssel oldott (nem opacity-vel).
+    const steamMat = new THREE.MeshBasicMaterial({ color: 0xCC5522, transparent: true, opacity: 0.5 });
+    const steam = [];
+    for (let i = 0; i < 6; i++) {
+        const s = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.09), steamMat);
+        s.userData.phase = i / 6;
+        s.userData.x = (Math.random() - 0.5) * (w - 0.4);
+        s.userData.z = (Math.random() - 0.5) * 0.5;
+        steam.push(s);
+        g.add(s);
+    }
+
+    g.userData.rimMat = rimMat;
+    g.userData.steam = steam;
     return g;
 }
 

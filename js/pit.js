@@ -52,9 +52,22 @@ export class Pit {
         };
     }
 
-    /** Map logical state -> 3D mesh position. Called once per frame. */
-    syncMesh() {
+    /** Map logical state -> 3D mesh position + animációk. Called once per frame. */
+    syncMesh(time = 0) {
         const laneCenter = this.lanes.reduce((a, l) => a + LANES[l], 0) / this.lanes.length;
         this.mesh.position.set(laneCenter, 0, logicalToWorldZ(this.x + this.gapWidth / 2));
+
+        // Perem-pulzálás (~2 s periódus 60 fps-en)
+        const rimMat = this.mesh.userData.rimMat;
+        if (rimMat) {
+            rimMat.emissiveIntensity = 1.8 + Math.sin(time * 0.05) * 0.7;
+        }
+
+        // Gőz: körkörös emelkedés a lyukból, emelkedve összezsugorodva
+        for (const s of this.mesh.userData.steam || []) {
+            const t = (time * 0.006 + s.userData.phase) % 1;
+            s.position.set(s.userData.x, -0.55 + t * 0.85, s.userData.z);
+            s.scale.setScalar(1 - t * 0.7);
+        }
     }
 }
