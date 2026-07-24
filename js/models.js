@@ -256,8 +256,11 @@ export function createPitMesh(span) {
 }
 
 // Entitás-mesh GPU-erőforrásainak felszabadítása.
-// A gyártófüggvények minden híváskor FRIS geometriát és anyagot
-// hoznak létre, így a dispose biztonságos (nincs megosztott erőforrás).
+// A gyártófüggvények EGY entitás-csoporton BELÜL megoszthatnak
+// erőforrásokat (pl. gödör perem-anyaga, gőz-anyag, klónozott geometria),
+// így ugyanaz a geometria/anyag többször is dispose-olódhat. Ez biztonságos,
+// mert a THREE dispose() metódusai idempotensek. Entitáson KÍVÜLI
+// megosztás továbbra sincs.
 // Kezeli a Group-okat (rekurzívan) és a tömbös anyagokat is.
 export function disposeMesh(root) {
     root.traverse((obj) => {
