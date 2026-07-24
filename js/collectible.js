@@ -11,12 +11,12 @@ import { createCollectibleMesh } from './models.js';
 
 export class Collectible {
     constructor(x, y, type, lane) {
-        this.type = type; // 'hotdog' | 'donut'
+        this.type = type; // 'hotdog' | 'golden_hotdog' | 'donut'
         this.x = x;
         this.baseY = y;
         this.y = y;
-        this.width = type === 'hotdog' ? 36 : 32;
-        this.height = type === 'hotdog' ? 22 : 32;
+        this.width = type === 'donut' ? 32 : 36;
+        this.height = type === 'donut' ? 32 : 22;
         this.collected = false;
 
         // Lane (float while the magnet pulls it across lanes)
@@ -83,5 +83,9 @@ export class Collectible {
         const lane = Math.max(0, Math.min(2, this.lane));
         this.mesh.position.set((lane - 1) * LANE_WIDTH, worldHeightY(this.y, this.height), logicalToWorldZ(this.x));
         this.mesh.rotation.y = time * 0.05; // gentle spin
+        // Arany hotdog: csillogó skála-pulzálás
+        if (this.type === 'golden_hotdog') {
+            this.mesh.scale.setScalar(1 + Math.sin(time * 0.12) * 0.12);
+        }
     }
 }

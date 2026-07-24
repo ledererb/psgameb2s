@@ -23,6 +23,10 @@ import { PowerUp } from './powerup.js';
 import { TrailEffect3D, WeatherSystem3D } from './effects.js';
 import { disposeMesh } from './models.js';
 
+// Arany hotdog: ritka, nagyértékű collectible (spec §4)
+const GOLDEN_HOTDOG_POINTS = 500;
+const GOLDEN_HOTDOG_CHANCE = 0.06;
+
 // ── Particle class for collect/hit effects ──
 
 class Particle {
@@ -1097,7 +1101,8 @@ export class Game {
 
         const y = randomBetween(GROUND_Y - 130, GROUND_Y - 40);
         const lane = randomBetween(0, 2);
-        const col = new Collectible(CANVAS_WIDTH + 40, y, type, lane);
+        const finalType = type === 'hotdog' && Math.random() < GOLDEN_HOTDOG_CHANCE ? 'golden_hotdog' : type;
+        const col = new Collectible(CANVAS_WIDTH + 40, y, finalType, lane);
         this.sceneMgr.scene.add(col.mesh);
         this.collectibles.push(col);
     }
@@ -1144,7 +1149,8 @@ export class Game {
                     break;
                 }
             }
-            const col = new Collectible(x, y, 'hotdog', lane);
+            const itemType = Math.random() < GOLDEN_HOTDOG_CHANCE ? 'golden_hotdog' : 'hotdog';
+            const col = new Collectible(x, y, itemType, lane);
             this.sceneMgr.scene.add(col.mesh);
             this.collectibles.push(col);
         }
@@ -1288,9 +1294,10 @@ export class Game {
                 col.collected = true;
 
                 // Effects are projected from the collectible's 3D mesh position
-                if (col.type === 'hotdog') {
+                if (col.type === 'hotdog' || col.type === 'golden_hotdog') {
+                    const golden = col.type === 'golden_hotdog';
                     // Combo-enhanced scoring with double score power-up
-                    const basePoints = HOTDOG_POINTS;
+                    const basePoints = golden ? GOLDEN_HOTDOG_POINTS : HOTDOG_POINTS;
                     const multiplied = basePoints * this.comboMultiplier * (this.activeDoubleScore.active ? 2 : 1);
                     this.score += multiplied;
 
@@ -1300,13 +1307,13 @@ export class Game {
 
                     // Effects
                     this.audio.playCollect();
-                    // Mustard + ketchup colored particles
+                    // Mustard + ketchup colored particles (aranynál extra arany)
                     this._spawnParticlesAt(col.mesh, 4, '#F1C40F', 1);
-                    this._spawnParticlesAt(col.mesh, 3, '#E74C3C', 0.8);
+                    this._spawnParticlesAt(col.mesh, 3, golden ? '#FFD700' : '#E74C3C', 0.8);
                     this._spawnParticlesAt(col.mesh, 2, '#D4A050', 0.6);
-                    this._spawnFloatingTextAt(col.mesh, `+${multiplied}`, '#F1C40F');
-                    // Gold screen flash
-                    this.screenFlash = { alpha: 0.12, color: 'rgba(241, 196, 15, 0.4)' };
+                    this._spawnFloatingTextAt(col.mesh, `+${multiplied}`, golden ? '#FFD700' : '#F1C40F');
+                    // Gold screen flash (aranynál erősebb)
+                    this.screenFlash = { alpha: golden ? 0.22 : 0.12, color: 'rgba(241, 196, 15, 0.4)' };
                     // Trigger Snacky happy face
                     if (this.player.triggerHappy) this.player.triggerHappy();
 

@@ -151,12 +151,25 @@ export function createSnackyModel() {
 
 export function createCollectibleMesh(type) {
     const g = new THREE.Group();
-    if (type === 'hotdog') {
+    if (type === 'hotdog' || type === 'golden_hotdog') {
+        const golden = type === 'golden_hotdog';
         const bun = new THREE.Mesh(new THREE.CapsuleGeometry(0.18, 0.4, 4, 10),
-            new THREE.MeshStandardMaterial({ color: 0xE8B96F, roughness: 0.7 }));
+            new THREE.MeshStandardMaterial({
+                color: golden ? 0xFFD700 : 0xE8B96F,
+                emissive: golden ? 0xAA8800 : 0x000000,
+                emissiveIntensity: golden ? 0.7 : 0,
+                metalness: golden ? 0.6 : 0,
+                roughness: golden ? 0.3 : 0.7
+            }));
         bun.rotation.z = Math.PI / 2;
         const sausage = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.42, 4, 10),
-            new THREE.MeshStandardMaterial({ color: 0xC0392B, roughness: 0.6 }));
+            new THREE.MeshStandardMaterial({
+                color: golden ? 0xFFEE88 : 0xC0392B,
+                emissive: golden ? 0xCC9900 : 0x000000,
+                emissiveIntensity: golden ? 0.7 : 0,
+                metalness: golden ? 0.5 : 0,
+                roughness: golden ? 0.35 : 0.6
+            }));
         sausage.rotation.z = Math.PI / 2;
         sausage.position.y = 0.08;
         g.add(bun, sausage);
