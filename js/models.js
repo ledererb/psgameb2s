@@ -197,55 +197,55 @@ export function createPowerUpMesh(type) {
 }
 
 export function createPitMesh(span) {
-    // Mély lyuk-illúzió: "void" alj + belső falak + világító perem + gőz.
+    // Mély lyuk-illúzió: MINDEN látható geometria az útszint FELETT van (y > 0),
+    // mert az út aszfaltja egy folytonos doboz, amelynek felső lapja y=0-nál van —
+    // bármi alatta teljesen takarásba kerül. A mélységet ezért árnyékolási
+    // lépcsőkkel hazudjuk: sötét "fedőlap" + még sötétebb emelt középsávon
+    // ("lefelé tart") + világító perem + felszálló gőz.
     // A Group z-mérete a Pit-ben scale.z-vel nyúlik a gap logikai szélességére.
     const w = span === 3 ? 6.6 : 2.0;
     const g = new THREE.Group();
 
-    // "Void" alj — fényképtelen, közel-fekete
-    const bottom = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, 1),
-        new THREE.MeshBasicMaterial({ color: 0x020208 }));
-    bottom.position.y = -0.6;
-    g.add(bottom);
+    // Nyílás-fedőlap: közel-fekete lap, amely LETAKARJA az aszfaltot a gödör
+    // területén (a régi útszintű sötét matrica szerepét tölti be).
+    const cover = new THREE.Mesh(new THREE.BoxGeometry(w, 0.04, 1),
+        new THREE.MeshBasicMaterial({ color: 0x05050C }));
+    cover.position.y = 0.02;
+    g.add(cover);
 
-    // Belső oldalfalak (4), útszinttől az aljig
-    const wallMat = new THREE.MeshBasicMaterial({ color: 0x0A0A14 });
-    const wallH = 0.6, wallT = 0.06;
-    const front = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, wallT), wallMat);
-    front.position.set(0, -wallH / 2, 0.5 - wallT / 2);
-    const back = front.clone();
-    back.position.z = -0.5 + wallT / 2;
-    const left = new THREE.Mesh(new THREE.BoxGeometry(wallT, wallH, 1), wallMat);
-    left.position.set(-w / 2 + wallT / 2, -wallH / 2, 0);
-    const right = left.clone();
-    right.position.x = w / 2 - wallT / 2;
-    g.add(front, back, left, right);
+    // Belső mélység-lépcső: kisebb, még feketébb, enyhén emelt lap a közepén —
+    // a kamera alacsony szögéből "lefelé tartó" mélyedésnek olvasható.
+    const depthStep = new THREE.Mesh(new THREE.BoxGeometry(w - 0.35, 0.03, 0.8),
+        new THREE.MeshBasicMaterial({ color: 0x010103 }));
+    depthStep.position.y = 0.045;
+    g.add(depthStep);
 
-    // Világító perem (4 emissive csík az útszinten) — EGY megosztott anyag,
-    // így a pulzálás egy helyen állítható (userData.rimMat)
+    // Világító perem (4 emissive csík az útszint felett) — EGY megosztott anyag,
+    // így a pulzálás egy helyen állítható (userData.rimMat).
+    // Vastagabb és magasabb, hogy távolról is kivehető legyen a gyűrű.
     const rimMat = new THREE.MeshStandardMaterial({
         color: 0xFF6B1A, emissive: 0xFF6B1A, emissiveIntensity: 2, roughness: 0.4
     });
-    const rimW = 0.1;
+    const rimW = 0.14;
     const rimFront = new THREE.Mesh(new THREE.BoxGeometry(w, 0.04, rimW), rimMat);
-    rimFront.position.set(0, 0.03, 0.5 - rimW / 2);
+    rimFront.position.set(0, 0.07, 0.5 - rimW / 2);
     const rimBack = rimFront.clone();
     rimBack.position.z = -0.5 + rimW / 2;
     const rimLeft = new THREE.Mesh(new THREE.BoxGeometry(rimW, 0.04, 1), rimMat);
-    rimLeft.position.set(-w / 2 + rimW / 2, 0.03, 0);
+    rimLeft.position.set(-w / 2 + rimW / 2, 0.07, 0);
     const rimRight = rimLeft.clone();
     rimRight.position.x = w / 2 - rimW / 2;
     g.add(rimFront, rimBack, rimLeft, rimRight);
 
-    // Felszálló gőz: 6 apró fényképtelen kocka, fázisban eltolt körkörös emelkedés.
-    // Megosztott anyag — a "kifakulás" méretezéssel oldott (nem opacity-vel).
-    const steamMat = new THREE.MeshBasicMaterial({ color: 0xCC5522, transparent: true, opacity: 0.5 });
+    // Felszálló gőz: 8 narancs fényképtelen kocka, fázisban eltolt körkörös
+    // emelkedés. Megosztott anyag — a "kifakulás" méretezéssel oldott.
+    const steamMat = new THREE.MeshBasicMaterial({ color: 0xFF6633, transparent: true, opacity: 0.7 });
     const steam = [];
-    for (let i = 0; i < 6; i++) {
-        const s = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.09), steamMat);
-        s.userData.phase = i / 6;
-        s.userData.x = (Math.random() - 0.5) * (w - 0.4);
-        s.userData.z = (Math.random() - 0.5) * 0.5;
+    for (let i = 0; i < 8; i++) {
+        const s = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.14), steamMat);
+        s.userData.phase = i / 8;
+        s.userData.x = (Math.random() - 0.5) * (w - 0.5);
+        s.userData.z = (Math.random() - 0.5) * 0.6;
         steam.push(s);
         g.add(s);
     }

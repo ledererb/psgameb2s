@@ -66,7 +66,7 @@ export class Pit {
         // Gőz: körkörös emelkedés a lyukból, emelkedve összezsugorodva
         for (const s of this.mesh.userData.steam || []) {
             const t = (time * 0.006 + s.userData.phase) % 1;
-            s.position.set(s.userData.x, -0.55 + t * 0.85, s.userData.z);
+            s.position.set(s.userData.x, 0.05 + t * 1.15, s.userData.z);
             s.scale.setScalar(1 - t * 0.7);
         }
     }
