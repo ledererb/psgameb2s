@@ -68,9 +68,9 @@ function init() {
     game = new Game(audio, world, sceneMgr);
 
     // Game over callback
-    game.onGameOver = (score) => {
+    game.onGameOver = (score, stats) => {
         state = 'gameover';
-        showGameOverScreen(score);
+        showGameOverScreen(score, stats);
     };
 
     // Show high score on menu
@@ -240,12 +240,20 @@ function startGame() {
     game.start();
 }
 
-function showGameOverScreen(score) {
+function showGameOverScreen(score, stats) {
     gameOverScreen.classList.remove('hidden');
     finalScoreEl.textContent = formatScore(score);
     emailInput.value = '';
     submitBtn.disabled = false;
     submitBtn.textContent = 'Pontszám mentése';
+
+    // Run stats
+    if (stats) {
+        document.getElementById('stat-distance').textContent = `${formatScore(stats.distance)} m`;
+        document.getElementById('stat-combo').textContent = `×${stats.maxCombo}`;
+        document.getElementById('stat-nearmiss').textContent = stats.nearMisses;
+        document.getElementById('stat-bosses').textContent = stats.bosses;
+    }
 
     // Show leaderboard
     leaderboard.renderInto(leaderboardContainer);

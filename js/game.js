@@ -184,6 +184,12 @@ export class Game {
         this.milestoneBanner = null; // { text, timer }
         this.milestoneNames = ['🌅 HAJNAL ÉRA!', '☀️ NAPPALI ÉRA!', '🌆 NAPLEMENTE ÉRA!', '🌃 NEON VÁROS!'];
 
+        // ── Futam-statisztika (game over összesítő, session-only) ──
+        this.runDistance = 0;
+        this.maxComboReached = 1;
+        this.nearMissCount = 0;
+        this.bossesDefeated = 0;
+
         // ── Visual effects (3D) ──
         this.trailEffect = new TrailEffect3D(this.sceneMgr.scene);
         this.weatherSystem = new WeatherSystem3D(this.sceneMgr.scene);
@@ -295,6 +301,12 @@ export class Game {
         this.currentMilestone = 0;
         this.milestoneBanner = null;
 
+        // Reset run stats
+        this.runDistance = 0;
+        this.maxComboReached = 1;
+        this.nearMissCount = 0;
+        this.bossesDefeated = 0;
+
         // Reset effects (reuses pooled 3D objects — no re-allocation)
         this.trailEffect.reset();
         this.weatherSystem.reset();
@@ -373,6 +385,9 @@ export class Game {
         // Score (distance)
         this.score++;
 
+        // Futam-statisztika: megtett táv (logikai px; ~50 px = 1 m)
+        this.runDistance += this.gameSpeed;
+
         // ── Near-miss cooldown ──
         if (this.nearMissCooldown > 0) this.nearMissCooldown--;
 
@@ -439,6 +454,7 @@ export class Game {
             if (this.bossRestTimer <= 0) {
                 // Boss rest over — give bonus
                 this.score += 500;
+                this.bossesDefeated++;
                 this.floatingTexts.push(
                     new FloatingText(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 40, '+500 BOSS BÓNUSZ!', '#F1C40F')
                 );
@@ -670,7 +686,14 @@ export class Game {
         if (this.player.lives <= 0) {
             this.isRunning = false;
             this.audio.playGameOver();
-            if (this.onGameOver) this.onGameOver(this.score);
+            if (this.onGameOver) {
+                this.onGameOver(this.score, {
+                    distance: Math.round(this.runDistance / 50),
+                    maxCombo: this.maxComboReached,
+                    nearMisses: this.nearMissCount,
+                    bosses: this.bossesDefeated
+                });
+            }
         }
 
         // ── Screen flash decay ──
@@ -1199,6 +1222,7 @@ export class Game {
                     if (vertGap < 12 || horizGap < 8) {
                         const nearMissBonus = 50;
                         this.score += nearMissBonus;
+                        this.nearMissCount++;
                         this._spawnFloatingTextAt(this.player.mesh, 'CLOSE! +50', '#00DDFF');
                         this._spawnParticlesAt(this.player.mesh, 4, '#00DDFF', 0.6);
                         this.nearMissCooldown = 30; // prevent spam
@@ -1249,6 +1273,7 @@ export class Game {
                     !this.player.isOnGround && (GROUND_Y - this.player.y - this.player.height) < 30) {
                     const nearMissBonus = 50;
                     this.score += nearMissBonus;
+                    this.nearMissCount++;
                     this._spawnFloatingTextAt(this.player.mesh, 'CLOSE! +50', '#00DDFF');
                     this._spawnParticlesAt(this.player.mesh, 4, '#00DDFF', 0.6);
                     this.nearMissCooldown = 30; // prevent spam
@@ -1304,6 +1329,9 @@ export class Game {
                     // Advance combo
                     this.comboMultiplier = Math.min(this.maxCombo, this.comboMultiplier + 1);
                     this.comboTimer = this.comboMaxTimer;
+                    if (this.comboMultiplier > this.maxComboReached) {
+                        this.maxComboReached = this.comboMultiplier;
+                    }
 
                     // Effects
                     this.audio.playCollect();
