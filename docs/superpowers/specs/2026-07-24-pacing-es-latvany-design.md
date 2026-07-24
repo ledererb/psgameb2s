@@ -21,13 +21,19 @@ A 3D migráció utáni játékteszt három problémát/igényt tárt fel:
 
 ## 3. Mély 3D gödör + effektek
 
-A `js/models.js` `createPitMesh(span)` teljes újraépítése — a lapos decal helyett valódi mélyedés-illúzió:
+A `js/models.js` `createPitMesh(span)` teljes újraépítése — a lapos decal helyett mélyedés-illúzió:
 
-- **"Void" alj:** fekete, fényképtelen (`MeshBasicMaterial`, közel-fekete kékesfekete) sík az útszint alatt (~0.6 world egység).
-- **Belső oldalfalak:** 4 sötét, fényképtelen fal a lyuk széle mentén, az útszinttől az aljig — a lyuk "mélynek" látszik a fix kameraállásból.
-- **Világító perem:** 4 vékony emissive narancs (`#FF6B1A`-féle) doboz a lyuk útszintű szélein, lassú pulzálással (emissiveIntensity szinusz, ~1.5–2.5 között, ~2 s periódus). Mind az 5 témán kontrasztos.
-- **Felszálló gőz:** ~6 apró emissive kocka, amelyek körkörösen felfelé lebegnek a lyukból (a pit group része, `syncMesh()`/update animálja; NEM overlay-particle — a 3D-s világ része).
-- A `Pit` osztály kap egy `update()`-et (vagy a meglévő `syncMesh()` bővül) a perem-pulzálás és a gőz animálására; a `game.js` update-ciklusa hívja.
+> **Implementációs korrekció (2026-07-24, final review után):** az eredeti terv
+> szerinti "void alj az útszint alatt + belső oldalfalak" megoldás **láthatatlan**,
+> mert az út aszfaltja egy folytonos doboz, amelynek teteje `y=0`-nál van — minden
+> `y<0` geometria beépül és takarásba kerül. Az implementált megoldás ezért az
+> **útszint FÖLÖTT** építi fel a mélység-illúziót (a spec célja — látványos,
+> jól olvasható gödör — így teljesül):
+
+- **Sötét nyílás-fedő:** közel-fekete (`#05050C`, `MeshBasicMaterial`) doboz az útszinten (y≈0.02), amely takarja az aszfaltot a gödör területén — ez a "lyuk".
+- **Belső mélyítő lépcső:** kisebb, még feketébb (`#010103`) doboz középen, kicsit magasabban (y≈0.045) — a fix, alacsony kameraállásból "lesüllyedő" hatást ad.
+- **Világító perem:** 4 emissive narancs (`#FF6B1A`) csík a nyílás szélein (y≈0.07, vastagabb: 0.14), lassú pulzálással (emissiveIntensity szinusz, ~1.1–2.5, ~2 s periódus). Mind az 5 témán kontrasztos; távolról is ez hordozza az olvashatóságot.
+- **Felszálló gőz:** 8 apró fényképtelen narancs kocka, amelyek körkörösen felfelé lebegnek a lyukból (a pit group része, `Pit.syncMesh(time)` animálja; NEM overlay-particle — a 3D-s világ része). Közelről látványos; távolról a perem viszi a jelzést.
 - **Változatlan:** hitbox (`GROUND_Y-8`), sávlogika, near-miss, spawn-szabályok. Csak vizuális réteg.
 
 ## 4. Arany hotdog 🌟
