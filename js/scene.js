@@ -20,6 +20,9 @@ export class SceneManager {
         this.scene.fog = new THREE.Fog('#0B0B2B', 45, 110); // matches THEMES_3D[0] (night)
 
         this.baseFov = 60;
+        this.vw = CANVAS_WIDTH;
+        this.vh = CANVAS_HEIGHT;
+        this.portrait = false;
         this.camera = new THREE.PerspectiveCamera(
             this.baseFov, CANVAS_WIDTH / CANVAS_HEIGHT, 0.1, 200
         );
@@ -46,9 +49,33 @@ export class SceneManager {
         this._projTmp = new THREE.Vector3();
     }
 
+    /**
+     * Valós CSS-pixel viewport beállítása (DPR-t a renderer kezeli).
+     * Portraitban (w<=h) a kamera aspect a valós arány; a FOV-t _baseFov számolja.
+     */
+    setViewport(w, h) {
+        this.vw = w;
+        this.vh = h;
+        this.portrait = w <= h;
+        this.renderer.setSize(w, h, false);
+        this.camera.aspect = w / h;
+        this.camera.updateProjectionMatrix();
+    }
+
+    /**
+     * Portraitban annyi vertikális FOV, hogy a játékos síkjában (kamera-táv 8)
+     * a 3 sáv + 0.6 margó (±2.8 világegység) mindig beleférjen. Fekvőben 60°.
+     */
+    _baseFov() {
+        if (!this.portrait) return this.baseFov;
+        const hHalf = Math.atan(2.8 / 8);
+        const aspect = this.vw / this.vh;
+        return THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(hHalf) / aspect));
+    }
+
     updateCamera(speedNorm, playerWorldX) {
         // FOV kick with speed
-        this.camera.fov = this.baseFov + speedNorm * 15;
+        this.camera.fov = this._baseFov() + speedNorm * 15;
         this.camera.updateProjectionMatrix();
 
         // Smooth lateral follow with lag
@@ -67,11 +94,11 @@ export class SceneManager {
         this.shakeY = sy * 0.06;
     }
 
-    /** Project a world position to overlay-canvas (800x400 logical) coords. */
+    /** Project a world position to viewport (CSS px) coords. */
     projectToScreen(v3, out) {
         this._projTmp.copy(v3).project(this.camera);
-        out.x = (this._projTmp.x * 0.5 + 0.5) * CANVAS_WIDTH;
-        out.y = (-this._projTmp.y * 0.5 + 0.5) * CANVAS_HEIGHT;
+        out.x = (this._projTmp.x * 0.5 + 0.5) * this.vw;
+        out.y = (-this._projTmp.y * 0.5 + 0.5) * this.vh;
         return out;
     }
 

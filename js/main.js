@@ -19,6 +19,7 @@ let canvas;
 let overlayCanvas, overlayCtx;
 let game, audio, leaderboard;
 let sceneMgr, world;
+let viewW = CANVAS_WIDTH, viewH = CANVAS_HEIGHT; // valós CSS-px viewport
 
 // Slide key tracking
 let slideKeyDown = false;
@@ -41,13 +42,6 @@ function init() {
     canvas = document.getElementById('gameCanvas');
     overlayCanvas = document.getElementById('overlayCanvas');
     overlayCtx = overlayCanvas.getContext('2d');
-
-    // HiDPI/Retina support: scale overlay backing store
-    // (the main canvas is managed by SceneManager's WebGL renderer)
-    const dpr = window.devicePixelRatio || 1;
-    overlayCanvas.width = CANVAS_WIDTH * dpr;
-    overlayCanvas.height = CANVAS_HEIGHT * dpr;
-    overlayCtx.scale(dpr, dpr);
 
     // Cache DOM
     menuScreen = document.getElementById('menu-screen');
@@ -196,6 +190,8 @@ function init() {
     // Handle window resize for responsive canvas
     handleResize();
     window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', () => setTimeout(handleResize, 100));
+    document.addEventListener('fullscreenchange', () => setTimeout(handleResize, 60));
 
     // Start render loop
     showMenu();
@@ -300,30 +296,33 @@ function updateHighScore() {
 // ── Responsive canvas ──
 
 function handleResize() {
-    const container = document.getElementById('game-container');
-    if (!container) return;
-
     const maxW = window.innerWidth;
     const maxH = window.innerHeight;
-    const aspect = CANVAS_WIDTH / CANVAS_HEIGHT; // 2:1
-    let w = maxW;
-    let h = w / aspect;
-    if (h > maxH) {
-        h = maxH;
-        w = h * aspect;
+    const portrait = maxW <= maxH;
+    let w, h;
+    if (portrait) {
+        // Portrait: teljes képernyő — a kamera FOV oldja meg a sávlefedést
+        w = maxW; h = maxH;
+    } else {
+        // Fekvő: a megszokott 2:1 letterbox
+        const aspect = CANVAS_WIDTH / CANVAS_HEIGHT;
+        w = maxW; h = w / aspect;
+        if (h > maxH) { h = maxH; w = h * aspect; }
     }
+    viewW = w; viewH = h;
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
     overlayCanvas.style.width = `${w}px`;
     overlayCanvas.style.height = `${h}px`;
 
-    // Update overlay backing store for current DPR (handles display changes)
+    // Overlay backing store a valós méretre (DPR-kezelve)
     const dpr = window.devicePixelRatio || 1;
-    if (overlayCanvas.width !== CANVAS_WIDTH * dpr) {
-        overlayCanvas.width = CANVAS_WIDTH * dpr;
-        overlayCanvas.height = CANVAS_HEIGHT * dpr;
-        overlayCtx.scale(dpr, dpr);
-    }
+    overlayCanvas.width = Math.round(w * dpr);
+    overlayCanvas.height = Math.round(h * dpr);
+    overlayCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    sceneMgr.setViewport(w, h);
+    game.setViewport(w, h);
 }
 
 // ── Main render loop ──
@@ -331,6 +330,9 @@ function handleResize() {
 function loop() {
     if (state === 'playing') {
         game.update();
+        // A drawOverlay még csak a logikai 800×400-as területet törli (Task 2 igazítja);
+        // a valós viewportot itt tisztítjuk, hogy ne maradjon menü-háttér a széleken.
+        overlayCtx.clearRect(0, 0, viewW, viewH);
         game.drawOverlay(overlayCtx);
         world.update(game.getSpeed());
         sceneMgr.updateCamera(
@@ -345,10 +347,11 @@ function loop() {
         sceneMgr.render();
     } else if (state === 'gameover') {
         // Draw frozen game state behind overlay
+        overlayCtx.clearRect(0, 0, viewW, viewH);
         game.drawOverlay(overlayCtx);
         // Dark overlay on canvas
         overlayCtx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-        overlayCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        overlayCtx.fillRect(0, 0, viewW, viewH);
         sceneMgr.render();
     }
 
@@ -363,22 +366,22 @@ function drawMenuBackground() {
     // Animate background slowly even on menu
     menuBgOffset += 0.02;
 
-    overlayCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    overlayCtx.clearRect(0, 0, viewW, viewH);
 
     // Sky gradient
-    const grad = overlayCtx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+    const grad = overlayCtx.createLinearGradient(0, 0, 0, viewH);
     grad.addColorStop(0, '#0B0B2B');
     grad.addColorStop(0.5, '#141452');
     grad.addColorStop(0.8, '#1A2466');
     grad.addColorStop(1, '#2C3E50');
     overlayCtx.fillStyle = grad;
-    overlayCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    overlayCtx.fillRect(0, 0, viewW, viewH);
 
     // Stars
     overlayCtx.fillStyle = 'rgba(255,255,230,0.4)';
     for (let i = 0; i < 40; i++) {
-        const sx = (i * 97 + menuBgOffset * 10) % CANVAS_WIDTH;
-        const sy = (i * 53) % (CANVAS_HEIGHT * 0.6);
+        const sx = (i * 97 + menuBgOffset * 10) % viewW;
+        const sy = (i * 53) % (viewH * 0.6);
         const size = 0.5 + (i % 3) * 0.5;
         overlayCtx.beginPath();
         overlayCtx.arc(sx, sy, size, 0, Math.PI * 2);
@@ -387,9 +390,9 @@ function drawMenuBackground() {
 
     // Simple ground
     overlayCtx.fillStyle = '#2c3e50';
-    overlayCtx.fillRect(0, 320, CANVAS_WIDTH, 80);
+    overlayCtx.fillRect(0, viewH - 80, viewW, 80);
     overlayCtx.fillStyle = '#8E8E8E';
-    overlayCtx.fillRect(0, 320, CANVAS_WIDTH, 4);
+    overlayCtx.fillRect(0, viewH - 80, viewW, 4);
 }
 
 // ── Boot ──

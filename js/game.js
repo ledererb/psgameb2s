@@ -220,6 +220,10 @@ export class Game {
         // Callbacks
         this.onGameOver = null;
         this.onScoreChange = null;
+
+        // Valós overlay-viewport (CSS px); a handleResize írja felül
+        this.viewW = CANVAS_WIDTH;
+        this.viewH = CANVAS_HEIGHT;
     }
 
     start() {
@@ -1387,6 +1391,8 @@ export class Game {
     getScore() { return this.score; }
     getLives() { return this.player.lives; }
     getSpeed() { return this.gameSpeed; }
+
+    setViewport(w, h) { this.viewW = w; this.viewH = h; }
 
     // ── Mission system ──
 
