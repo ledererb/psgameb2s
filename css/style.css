@@ -27,7 +27,8 @@ html, body {
 #game-container {
     position: relative;
     width: 100vw;
-    height: 100vh;
+    height: 100vh;   /* fallback */
+    height: 100dvh;  /* mobil címsor-független */
     overflow: hidden;
     background: #08081A;
 }
@@ -505,6 +506,56 @@ kbd {
 
     .controls-info {
         margin: 8px 0;
+    }
+}
+
+/* ── Portrait (mobil, álló) ── */
+
+@media (max-aspect-ratio: 1/1) {
+    .screen-content {
+        padding: 20px 16px;
+        max-height: 96dvh;
+        overflow-y: auto;
+    }
+
+    .game-title {
+        font-size: 2.2rem;
+    }
+
+    .game-desc {
+        font-size: 0.85rem;
+    }
+
+    .controls-info {
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .control-item {
+        justify-content: flex-start;
+    }
+
+    .game-tips {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        width: 100%;
+        max-width: 320px;
+        font-size: 1.3rem;
+        padding: 16px 24px;
+        touch-action: manipulation;
+    }
+
+    .stat-item {
+        flex: 1 1 40%;
+        min-width: 0;
+    }
+
+    .leaderboard-section {
+        max-height: 30dvh;
+        overflow-y: auto;
     }
 }
 
