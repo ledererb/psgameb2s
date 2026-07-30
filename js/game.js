@@ -1394,8 +1394,8 @@ export class Game {
 
     setViewport(w, h) { this.viewW = w; this.viewH = h; }
 
-    /** Portrait nagyított HUD-skála (1.4), fekvőben 1. */
-    _hudScale() { return this.viewH > this.viewW ? 1.4 : 1; }
+    /** Portrait nagyított HUD-skála (1.4); fekvőben a régi CSS-stretch arány (viewW/800). */
+    _hudScale() { return this.viewH > this.viewW ? 1.4 : this.viewW / CANVAS_WIDTH; }
 
     // ── Mission system ──
 
