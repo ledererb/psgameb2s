@@ -460,7 +460,7 @@ export class Game {
                 this.score += 500;
                 this.bossesDefeated++;
                 this.floatingTexts.push(
-                    new FloatingText(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 40, '+500 BOSS BÓNUSZ!', '#F1C40F')
+                    new FloatingText(this.viewW / 2, this.viewH / 2 - 40, '+500 BOSS BÓNUSZ!', '#F1C40F')
                 );
             }
         }
@@ -658,8 +658,8 @@ export class Game {
         if (this.gameSpeed > 9) {
             if (Math.random() < (this.gameSpeed - 9) * 0.05) {
                 this.speedLines.push({
-                    x: CANVAS_WIDTH,
-                    y: randomBetween(10, GROUND_Y - 10),
+                    x: this.viewW,
+                    y: randomBetween(10, this.viewH - 10),
                     length: randomBetween(30, 80),
                     alpha: 0.1 + Math.random() * 0.15
                 });
@@ -752,7 +752,7 @@ export class Game {
         }
 
         // Clear
-        ctx.clearRect(-5, -5, CANVAS_WIDTH + 10, CANVAS_HEIGHT + 10);
+        ctx.clearRect(-5, -5, this.viewW + 10, this.viewH + 10);
 
         // Speed lines
         for (const line of this.speedLines) {
@@ -780,7 +780,7 @@ export class Game {
                 ? this.screenFlash.color
                 : this.screenFlash.color;
             ctx.globalAlpha = this.screenFlash.alpha;
-            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            ctx.fillRect(0, 0, this.viewW, this.viewH);
             ctx.globalAlpha = 1;
         }
 
@@ -788,13 +788,13 @@ export class Game {
         if (this.gameSpeed > 10) {
             const vigAlpha = Math.min(0.25, (this.gameSpeed - 10) * 0.04);
             const vigGrad = ctx.createRadialGradient(
-                CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_HEIGHT * 0.4,
-                CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_WIDTH * 0.7
+                this.viewW / 2, this.viewH / 2, this.viewH * 0.4,
+                this.viewW / 2, this.viewH / 2, this.viewW * 0.7
             );
             vigGrad.addColorStop(0, 'rgba(0,0,0,0)');
             vigGrad.addColorStop(1, `rgba(0,0,0,${vigAlpha})`);
             ctx.fillStyle = vigGrad;
-            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            ctx.fillRect(0, 0, this.viewW, this.viewH);
         }
 
         // ── Boss warning overlay ──
@@ -819,7 +819,7 @@ export class Game {
     _drawHUD(ctx) {
         // Score (animated count-up)
         ctx.save();
-        ctx.font = 'bold 20px "Outfit", sans-serif';
+        ctx.font = `bold ${Math.round(20 * this._hudScale())}px "Outfit", sans-serif`;
         ctx.textAlign = 'left';
         ctx.fillStyle = '#FFF';
         ctx.strokeStyle = 'rgba(0,0,0,0.5)';
@@ -832,18 +832,18 @@ export class Game {
         ctx.textAlign = 'right';
         let heartsStr = '';
         for (let i = 0; i < this.player.lives; i++) heartsStr += '❤️ ';
-        ctx.font = '18px sans-serif';
-        ctx.strokeText(heartsStr, CANVAS_WIDTH - 15, 30);
-        ctx.fillText(heartsStr, CANVAS_WIDTH - 15, 30);
+        ctx.font = `${Math.round(18 * this._hudScale())}px sans-serif`;
+        ctx.strokeText(heartsStr, this.viewW - 15, 30);
+        ctx.fillText(heartsStr, this.viewW - 15, 30);
 
         // Speed indicator
         const speedMultiplier = (this.gameSpeed / INITIAL_SPEED).toFixed(1);
         ctx.textAlign = 'center';
-        ctx.font = '13px "Outfit", sans-serif';
+        ctx.font = `${Math.round(13 * this._hudScale())}px "Outfit", sans-serif`;
         ctx.fillStyle = this.gameSpeed > 10 ? '#E74C3C' : '#AEB6BF';
         const speedText = `×${speedMultiplier}`;
-        ctx.strokeText(speedText, CANVAS_WIDTH / 2, 22);
-        ctx.fillText(speedText, CANVAS_WIDTH / 2, 22);
+        ctx.strokeText(speedText, this.viewW / 2, 22);
+        ctx.fillText(speedText, this.viewW / 2, 22);
 
         // ── Combo display ──
         if (this.comboMultiplier > 1) {
@@ -861,7 +861,7 @@ export class Game {
      * Color ramps from green (low combo) through yellow, orange, to red (high combo).
      */
     _drawComboHUD(ctx) {
-        const x = CANVAS_WIDTH / 2;
+        const x = this.viewW / 2;
         const y = 42;
 
         // Color based on combo level: green→yellow→orange→red
@@ -879,7 +879,7 @@ export class Game {
 
         // Pulse effect based on combo timer
         const pulse = 1 + Math.sin(Date.now() * 0.008) * 0.05;
-        const fontSize = Math.round(16 * pulse);
+        const fontSize = Math.round(16 * pulse * this._hudScale());
 
         // Fire emoji for high combo
         const firePrefix = level >= 5 ? '🔥 ' : '';
@@ -912,7 +912,7 @@ export class Game {
      * Draw active power-up icons with remaining time bars in top-right area.
      */
     _drawActivePowerUps(ctx) {
-        let iconX = CANVAS_WIDTH - 20;
+        let iconX = this.viewW - 20;
         const iconY = 48;
         const iconSize = 22;
         const barW = 26;
@@ -984,19 +984,19 @@ export class Game {
 
         // Red overlay tint
         ctx.fillStyle = 'rgba(231, 76, 60, 0.08)';
-        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        ctx.fillRect(0, 0, this.viewW, this.viewH);
 
         // Warning text
-        const y = CANVAS_HEIGHT / 2 - 20;
+        const y = this.viewH / 2 - 20;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.font = 'bold 28px "Outfit", sans-serif';
+        ctx.font = `bold ${Math.round(28 * this._hudScale())}px "Outfit", sans-serif`;
         ctx.fillStyle = '#E74C3C';
         ctx.strokeStyle = 'rgba(0,0,0,0.7)';
         ctx.lineWidth = 4;
         const text = '⚠️ BOSS KÖZELEG!';
-        ctx.strokeText(text, CANVAS_WIDTH / 2, y);
-        ctx.fillText(text, CANVAS_WIDTH / 2, y);
+        ctx.strokeText(text, this.viewW / 2, y);
+        ctx.fillText(text, this.viewW / 2, y);
 
         ctx.restore();
     }
@@ -1030,8 +1030,8 @@ export class Game {
         ctx.save();
         ctx.globalAlpha = Math.max(0, alpha);
 
-        const cx = CANVAS_WIDTH / 2;
-        const cy = CANVAS_HEIGHT / 2 - 50;
+        const cx = this.viewW / 2;
+        const cy = this.viewH / 2 - 50;
 
         ctx.translate(cx, cy);
         ctx.scale(scale, scale);
@@ -1051,7 +1051,7 @@ export class Game {
         // Text
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.font = 'bold 22px "Outfit", sans-serif';
+        ctx.font = `bold ${Math.round(22 * this._hudScale())}px "Outfit", sans-serif`;
         ctx.fillStyle = '#F1C40F';
         ctx.strokeStyle = 'rgba(0,0,0,0.6)';
         ctx.lineWidth = 3;
@@ -1394,6 +1394,9 @@ export class Game {
 
     setViewport(w, h) { this.viewW = w; this.viewH = h; }
 
+    /** Portrait nagyított HUD-skála (1.4), fekvőben 1. */
+    _hudScale() { return this.viewH > this.viewW ? 1.4 : 1; }
+
     // ── Mission system ──
 
     _updateMissions() {
@@ -1423,11 +1426,11 @@ export class Game {
             this.score += m.reward;
             this.floatingTexts.push(
                 new FloatingText(
-                    CANVAS_WIDTH / 2, 70,
+                    this.viewW / 2, 70,
                     `✅ MISSION! +${m.reward}`, '#2ECC71'
                 )
             );
-            this._spawnParticles(CANVAS_WIDTH / 2, 60, 10, '#2ECC71', 1.5);
+            this._spawnParticles(this.viewW / 2, 60, 10, '#2ECC71', 1.5);
             this.screenFlash = { alpha: 0.15, color: 'rgba(46, 204, 113, 0.4)' };
             this.completedMissions++;
             this.currentMission = null;
@@ -1447,7 +1450,7 @@ export class Game {
         // Floating text announcement
         const label = template.label.replace('{n}', template.target);
         this.floatingTexts.push(
-            new FloatingText(CANVAS_WIDTH / 2, 70, label, '#3498DB')
+            new FloatingText(this.viewW / 2, 70, label, '#3498DB')
         );
     }
 
@@ -1455,7 +1458,7 @@ export class Game {
         if (!this.currentMission) return;
         this.floatingTexts.push(
             new FloatingText(
-                CANVAS_WIDTH / 2, 70,
+                this.viewW / 2, 70,
                 '❌ KÜLDETÉS SIKERTELEN!', '#E74C3C'
             )
         );
@@ -1475,7 +1478,7 @@ export class Game {
 
         // Position: bottom-left
         const x = 12;
-        const y = CANVAS_HEIGHT - 16;
+        const y = this.viewH - 16;
 
         // Background pill
         ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';

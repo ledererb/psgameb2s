@@ -330,9 +330,6 @@ function handleResize() {
 function loop() {
     if (state === 'playing') {
         game.update();
-        // A drawOverlay még csak a logikai 800×400-as területet törli (Task 2 igazítja);
-        // a valós viewportot itt tisztítjuk, hogy ne maradjon menü-háttér a széleken.
-        overlayCtx.clearRect(0, 0, viewW, viewH);
         game.drawOverlay(overlayCtx);
         world.update(game.getSpeed());
         sceneMgr.updateCamera(
@@ -347,7 +344,6 @@ function loop() {
         sceneMgr.render();
     } else if (state === 'gameover') {
         // Draw frozen game state behind overlay
-        overlayCtx.clearRect(0, 0, viewW, viewH);
         game.drawOverlay(overlayCtx);
         // Dark overlay on canvas
         overlayCtx.fillStyle = 'rgba(0, 0, 0, 0.4)';
