@@ -222,7 +222,24 @@ function showMenu() {
     touchIsSliding = false;
 }
 
+/**
+ * Fullscreen-kérés a START user-gesture-ben. iPhone Safari nem támogatja —
+ * ott a promise elutasítás csendesen elnyelődik, a játék ettől függetlenül indul.
+ * Sikeres fullscreen után mobilon megpróbáljuk portraitba lockolni.
+ */
+function tryFullscreen() {
+    const el = document.documentElement;
+    if (!el.requestFullscreen) return;
+    el.requestFullscreen().then(() => {
+        if (screen.orientation && screen.orientation.lock &&
+            window.innerWidth <= window.innerHeight) {
+            screen.orientation.lock('portrait').catch(() => {});
+        }
+    }).catch(() => {});
+}
+
 function startGame() {
+    tryFullscreen();
     audio.init();
     audio.resume();
     state = 'playing';
