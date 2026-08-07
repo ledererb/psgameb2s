@@ -61,6 +61,9 @@ function init() {
     world = new World3D(sceneMgr);
     game = new Game(audio, world, sceneMgr);
 
+    // Szándékolt, TARTÓS debug-handle a vizuális verifikációkhoz (spec §5).
+    window.__snacky = { game, world };
+
     // Game over callback
     game.onGameOver = (score, stats) => {
         state = 'gameover';
