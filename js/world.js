@@ -16,15 +16,15 @@ const SEGMENT_LEN = 20; // must match models.js ROAD_LEN
 // spawning at z=-76 are clearly visible by z≈-40 (Task 4 review fix).
 const THEMES_3D = [
     { sky: '#0B0B2B', fogNear: 45, fogFar: 110, hemiSky: '#8899FF', hemiGround: '#332222', sun: '#AABBFF', sunI: 0.8, windowI: 1.0,
-      skyTop: '#030312', starI: 1.0,  celColor: '#E8ECFF', celPos: [-0.45, 0.55, -1], celSize: 10, glowI: 0.5 }, // night
+      skyTop: '#030312', starI: 1.0,  celColor: '#E8ECFF', celPos: [-0.30, 0.28, -1], celSize: 10, glowI: 0.5 }, // night
     { sky: '#3D2B52', fogNear: 50, fogFar: 120, hemiSky: '#FFB347', hemiGround: '#443333', sun: '#FF9F5A', sunI: 0.9, windowI: 0.7,
-      skyTop: '#1B1032', starI: 0.25, celColor: '#FFB347', celPos: [0.5, 0.14, -1],   celSize: 12, glowI: 0.8 }, // dawn
+      skyTop: '#1B1032', starI: 0.25, celColor: '#FFB347', celPos: [0.30, 0.14, -1],   celSize: 12, glowI: 0.8 }, // dawn
     { sky: '#4A90D9', fogNear: 60, fogFar: 140, hemiSky: '#BBDDFF', hemiGround: '#556644', sun: '#FFF4D6', sunI: 1.3, windowI: 0.1,
-      skyTop: '#2356A8', starI: 0.0,  celColor: '#FFF4D6', celPos: [0.3, 0.7, -0.8],  celSize: 9,  glowI: 0.6 }, // day
+      skyTop: '#2356A8', starI: 0.0,  celColor: '#FFF4D6', celPos: [0.25, 0.22, -0.8],  celSize: 9,  glowI: 0.6 }, // day
     { sky: '#D96A3B', fogNear: 50, fogFar: 115, hemiSky: '#FFAA66', hemiGround: '#553333', sun: '#FF7733', sunI: 1.0, windowI: 0.8,
       skyTop: '#46183F', starI: 0.15, celColor: '#FF7733', celPos: [0.05, 0.09, -1],  celSize: 16, glowI: 1.0 }, // sunset
     { sky: '#12082B', fogNear: 45, fogFar: 110, hemiSky: '#FF44CC', hemiGround: '#220033', sun: '#44FFEE', sunI: 0.9, windowI: 1.2,
-      skyTop: '#05020F', starI: 0.8,  celColor: '#FF44CC', celPos: [-0.4, 0.5, -1],   celSize: 10, glowI: 0.9 }, // neon
+      skyTop: '#05020F', starI: 0.8,  celColor: '#FF44CC', celPos: [-0.30, 0.28, -1],   celSize: 10, glowI: 0.9 }, // neon
 ];
 
 const THEME_TRANSITION_FRAMES = 120; // ~2s at 60fps
