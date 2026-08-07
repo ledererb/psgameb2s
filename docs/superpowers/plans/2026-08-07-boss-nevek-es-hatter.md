@@ -80,7 +80,7 @@ Az `init()`-ben, a `game = new Game(...)` sor utáni blokkba (az `onGameOver` ca
 > DANGER ZONE-ra egyszerűsítette, az új mintákat elvetve (spec §2
 > scope-korrekció). Ez a revidált, kötelező változat: tiszta szövegcsere.
 
-- [ ] **Step 1: Warning-szöveg (js/game.js)**
+- [x] **Step 1: Warning-szöveg (js/game.js)**
 
 A `_drawBossWarning(ctx)`-ben (js/game.js:997):
 
@@ -91,7 +91,7 @@ A `_drawBossWarning(ctx)`-ben (js/game.js:997):
         const text = '⚠️ DANGER ZONE!';
 ```
 
-- [ ] **Step 2: Bónusz-szöveg (js/game.js)**
+- [x] **Step 2: Bónusz-szöveg (js/game.js)**
 
 A boss rest-timer végén (js/game.js:462-464):
 
@@ -106,7 +106,7 @@ A boss rest-timer végén (js/game.js:462-464):
                 );
 ```
 
-- [ ] **Step 3: Verifikáció**
+- [x] **Step 3: Verifikáció**
 
 `python3 -m http.server 8151` (háttérben), Playwright, START gomb (`#start-btn`). A `window.__snacky` handle tartós, használd.
 
@@ -116,7 +116,7 @@ A boss rest-timer végén (js/game.js:462-464):
 2. **Bónusz:** amikor `bossActive === true`: `page.evaluate(() => { const g = window.__snacky.game; g.bossPatternStep = g.bossCurrentPattern.length; })` → a minta azonnal „befejeződik”, rest 200 frame → poll-old, amíg `window.__snacky.game.floatingTexts.some(ft => ft.text === 'DANGER ZONE LEGYŐZVE! +500')` true nem lesz (max ~2 s); screenshot `task2-danger-bonus.png`.
 3. **Regresszió:** a boss-minták változatlanul spawnolnak (a warning után akadályok/gödrök érkeznek — `game.obstacles.length + game.pits.length > 0` a boss alatt), ütközés működik; console hibátlan.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add js/game.js
@@ -135,7 +135,7 @@ git commit -m "⚠️ Boss-szövegek: DANGER ZONE"
 - Consumes: `World3D.sceneMgr.scene`; `parseTheme(THEMES_3D[0])` eredménye mint kezdő témaállapot.
 - Produces: `Background3D` osztály: `constructor(scene, theme)`, `applyTheme(cur)`, `update()`. A `cur` objektum mezői (a Task 4 ezeket lerpolja): `sky` (Color = horizont), `skyTop` (Color), `starI` (0..1), `celColor` (Color), `celPos` (Vector3, normalizált irány), `celSize` (világegység), `glowI` (0..1).
 
-- [ ] **Step 1: `js/background.js` létrehozása (teljes fájl)**
+- [x] **Step 1: `js/background.js` létrehozása (teljes fájl)**
 
 ```js
 // ============================================
@@ -307,7 +307,7 @@ export class Background3D {
 }
 ```
 
-- [ ] **Step 2: world.js — import + THEMES_3D új mezők**
+- [x] **Step 2: world.js — import + THEMES_3D új mezők**
 
 Az import-blokk bővítése (js/world.js:6-8 után):
 
@@ -332,7 +332,7 @@ const THEMES_3D = [
 ];
 ```
 
-- [ ] **Step 3: world.js — parseTheme bővítése**
+- [x] **Step 3: world.js — parseTheme bővítése**
 
 A teljes függvény cseréje (js/world.js:26-37):
 
@@ -357,7 +357,7 @@ function parseTheme(t) {
 }
 ```
 
-- [ ] **Step 4: world.js — konstruktor-bekötés + update-hívás**
+- [x] **Step 4: world.js — konstruktor-bekötés + update-hívás**
 
 A konstruktor végére (a buildings for-ciklus után, js/world.js:69 körül):
 
@@ -373,7 +373,7 @@ Az `update(gameSpeed)` végére (a theme-transition blokk után, js/world.js:115
         if (this.background) this.background.update();
 ```
 
-- [ ] **Step 5: Verifikáció**
+- [x] **Step 5: Verifikáció**
 
 `python3 -m http.server 8152`, Playwright, START gomb.
 
@@ -382,7 +382,7 @@ Az `update(gameSpeed)` végére (a theme-transition blokk után, js/world.js:115
 3. `window.__snacky.world.setTheme(2)` után a FŐ jelenet (ég/köd/fények) átvált nappalra, de a háttér-komponensek még az éjszakai állapotban maradnak — ez VÁRT viselkedés ebben a taskban (a Task 4 köti be őket). Console hibátlan mindkét állapotban.
 4. Console hibátlan boot óta.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add js/background.js js/world.js
@@ -400,7 +400,7 @@ git commit -m "🌃 3D háttér: ég-dóm, csillagok, égitest, sziluett-sávok 
 - Consumes: `Background3D.applyTheme(cur)` (Task 3); a `cur` mezőlista a Task 3 Interfaces-blokkja szerint.
 - Produces: teljes téma-átmenet — a háttér minden komponense (dóm, csillagok, égitest, sziluett) a 120 frame-es lerp-ben vált; `_snapshotCurrent()` az új mezőkkel (mid-transition váltás folytonos marad).
 
-- [ ] **Step 1: world.js — `_snapshotCurrent()` bővítése**
+- [x] **Step 1: world.js — `_snapshotCurrent()` bővítése**
 
 A teljes metódus cseréje (js/world.js:132-144):
 
@@ -427,7 +427,7 @@ A teljes metódus cseréje (js/world.js:132-144):
     }
 ```
 
-- [ ] **Step 2: world.js — lerp-blokk bővítése (update(), js/world.js:100-115)**
+- [x] **Step 2: world.js — lerp-blokk bővítése (update(), js/world.js:100-115)**
 
 A `const t = this.themeT;` UTÁNI sorok cseréje/bővítése:
 
@@ -461,7 +461,7 @@ A `const t = this.themeT;` UTÁNI sorok cseréje/bővítése:
             this._applyTheme(cur);
 ```
 
-- [ ] **Step 3: world.js — `_applyTheme` hívja a hátteret**
+- [x] **Step 3: world.js — `_applyTheme` hívja a hátteret**
 
 A metódus végére (a buildings for-ciklus után, js/world.js:126-128 körül):
 
@@ -479,7 +479,7 @@ A metódus végére (a buildings for-ciklus után, js/world.js:126-128 körül):
     }
 ```
 
-- [ ] **Step 4: Verifikáció**
+- [x] **Step 4: Verifikáció**
 
 `python3 -m http.server 8153`, Playwright, START gomb. Minden témára: `page.evaluate(i => window.__snacky.world.setTheme(i), N)` → várj az átmenet végéig (frame-pollinggal: `world.themeT === 1`, ~120 frame + ráhagyás) → screenshot + állapot-ellenőrzés.
 
@@ -491,7 +491,7 @@ A metódus végére (a buildings for-ciklus után, js/world.js:126-128 körül):
 6. **Portrait:** `page.setViewportSize({ width: 390, height: 844 })` → reload → START → éj + nap screenshot (`task4-portrait-night.png`, `task4-portrait-day.png`) — a dóm mindenhol kitakar, a sziluett látszik.
 7. Console hibátlan végig.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add js/world.js
@@ -505,12 +505,12 @@ git commit -m "🌅 Téma-lerp a háttérre: 5 éra teljes átmenettel"
 **Files:**
 - Modify: bármely fájl, ha a checklist hibát talál (javítás a hiba scope-jában)
 
-- [ ] **Step 1: Kód-takarítás**
+- [x] **Step 1: Kód-takarítás**
 
 - Grep-ellenőrzés: nincs `console.log`, `debugger` a commitolt kódban (`window.__snacky` marad — szándékolt, spec §5).
 - `git status`: csak szándékolt fájlok; screenshotok (`task*.png`) ne kerüljenek be (a `.gitignore` fedi).
 
-- [ ] **Step 2: Teljes játékmenet-checklist (böngésző, friss port 8154)**
+- [x] **Step 2: Teljes játékmenet-checklist (böngésző, friss port 8154)**
 
 - [ ] billentyű: ←/→/Space/↑/↓, dupla ugrás, ground pound, csúszás
 - [ ] ütközés csak azonos sávban; invincibility-villogás
@@ -523,11 +523,11 @@ git commit -m "🌅 Téma-lerp a háttérre: 5 éra teljes átmenettel"
 - [ ] portrait (390×844) és fekvő nézet egyaránt helyes
 - [ ] DevTools console hibamentes; szűk ablakban akadásmentes
 
-- [ ] **Step 3: Vizuális review a felhasználóval**
+- [x] **Step 3: Vizuális review a felhasználóval**
 
 Mutasd meg a screenshotokat (5 téma fekvő + portrait, DANGER ZONE warning, DANGER ZONE LEGYŐZVE bónusz) a felhasználónak jóváhagyásra. Hangolási igény (színek, méretek, sűrűség) esetén a `THEMES_3D` új mezői / `SKYLINE_BANDS` konstansok a hangolási felületek — a finomítás a spec §4.6 megjegyzése szerint megengedett, struktúra-változás nélkül.
 
-- [ ] **Step 4: Commit (ha volt javítás/hangolás)**
+- [x] **Step 4: Commit (ha volt javítás/hangolás)**
 
 ```bash
 git add -A
