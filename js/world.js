@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { WORLD_SCALE } from './utils.js';
 import { createRoadSegment, createBuilding } from './models.js';
+import { Background3D } from './background.js';
 
 const SEGMENT_COUNT = 8;
 const SEGMENT_LEN = 20; // must match models.js ROAD_LEN
@@ -14,11 +15,16 @@ const SEGMENT_LEN = 20; // must match models.js ROAD_LEN
 // Fog distances pushed out (vs. original 28-40/85-110) so obstacles
 // spawning at z=-76 are clearly visible by z≈-40 (Task 4 review fix).
 const THEMES_3D = [
-    { sky: '#0B0B2B', fogNear: 45, fogFar: 110, hemiSky: '#8899FF', hemiGround: '#332222', sun: '#AABBFF', sunI: 0.8, windowI: 1.0 }, // night
-    { sky: '#3D2B52', fogNear: 50, fogFar: 120, hemiSky: '#FFB347', hemiGround: '#443333', sun: '#FF9F5A', sunI: 0.9, windowI: 0.7 }, // dawn
-    { sky: '#4A90D9', fogNear: 60, fogFar: 140, hemiSky: '#BBDDFF', hemiGround: '#556644', sun: '#FFF4D6', sunI: 1.3, windowI: 0.1 }, // day
-    { sky: '#D96A3B', fogNear: 50, fogFar: 115, hemiSky: '#FFAA66', hemiGround: '#553333', sun: '#FF7733', sunI: 1.0, windowI: 0.8 }, // sunset
-    { sky: '#12082B', fogNear: 45, fogFar: 110, hemiSky: '#FF44CC', hemiGround: '#220033', sun: '#44FFEE', sunI: 0.9, windowI: 1.2 }, // neon
+    { sky: '#0B0B2B', fogNear: 45, fogFar: 110, hemiSky: '#8899FF', hemiGround: '#332222', sun: '#AABBFF', sunI: 0.8, windowI: 1.0,
+      skyTop: '#030312', starI: 1.0,  celColor: '#E8ECFF', celPos: [-0.45, 0.55, -1], celSize: 10, glowI: 0.5 }, // night
+    { sky: '#3D2B52', fogNear: 50, fogFar: 120, hemiSky: '#FFB347', hemiGround: '#443333', sun: '#FF9F5A', sunI: 0.9, windowI: 0.7,
+      skyTop: '#1B1032', starI: 0.25, celColor: '#FFB347', celPos: [0.5, 0.14, -1],   celSize: 12, glowI: 0.8 }, // dawn
+    { sky: '#4A90D9', fogNear: 60, fogFar: 140, hemiSky: '#BBDDFF', hemiGround: '#556644', sun: '#FFF4D6', sunI: 1.3, windowI: 0.1,
+      skyTop: '#2356A8', starI: 0.0,  celColor: '#FFF4D6', celPos: [0.3, 0.7, -0.8],  celSize: 9,  glowI: 0.6 }, // day
+    { sky: '#D96A3B', fogNear: 50, fogFar: 115, hemiSky: '#FFAA66', hemiGround: '#553333', sun: '#FF7733', sunI: 1.0, windowI: 0.8,
+      skyTop: '#46183F', starI: 0.15, celColor: '#FF7733', celPos: [0.05, 0.09, -1],  celSize: 16, glowI: 1.0 }, // sunset
+    { sky: '#12082B', fogNear: 45, fogFar: 110, hemiSky: '#FF44CC', hemiGround: '#220033', sun: '#44FFEE', sunI: 0.9, windowI: 1.2,
+      skyTop: '#05020F', starI: 0.8,  celColor: '#FF44CC', celPos: [-0.4, 0.5, -1],   celSize: 10, glowI: 0.9 }, // neon
 ];
 
 const THEME_TRANSITION_FRAMES = 120; // ~2s at 60fps
@@ -26,6 +32,7 @@ const THEME_TRANSITION_FRAMES = 120; // ~2s at 60fps
 function parseTheme(t) {
     return {
         sky: new THREE.Color(t.sky),
+        skyTop: new THREE.Color(t.skyTop),
         hemiSky: new THREE.Color(t.hemiSky),
         hemiGround: new THREE.Color(t.hemiGround),
         sun: new THREE.Color(t.sun),
@@ -33,6 +40,11 @@ function parseTheme(t) {
         fogFar: t.fogFar,
         sunI: t.sunI,
         windowI: t.windowI,
+        starI: t.starI,
+        celColor: new THREE.Color(t.celColor),
+        celPos: new THREE.Vector3(...t.celPos).normalize(),
+        celSize: t.celSize,
+        glowI: t.glowI,
     };
 }
 
@@ -67,6 +79,10 @@ export class World3D {
                 this.buildings.push({ mesh: b, side, segIndex: i });
             }
         }
+
+        // Háttér (ég-dóm, csillagok, égitest, sziluett-sávok) — a téma-gép hajtja.
+        // Kezdőállapot: a settle-elt éjszakai téma (this._cur).
+        this.background = new Background3D(sceneMgr.scene, this._cur);
     }
 
     update(gameSpeed) {
@@ -113,6 +129,7 @@ export class World3D {
             cur.windowI = from.windowI + (to.windowI - from.windowI) * t;
             this._applyTheme(cur);
         }
+        if (this.background) this.background.update();
     }
 
     _applyTheme(cur) {
