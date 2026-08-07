@@ -120,6 +120,7 @@ export class World3D {
             const from = this.themeFrom;
             const to = this.themeTo;
             cur.sky.lerpColors(from.sky, to.sky, t);
+            cur.skyTop.lerpColors(from.skyTop, to.skyTop, t);
             cur.hemiSky.lerpColors(from.hemiSky, to.hemiSky, t);
             cur.hemiGround.lerpColors(from.hemiGround, to.hemiGround, t);
             cur.sun.lerpColors(from.sun, to.sun, t);
@@ -127,6 +128,12 @@ export class World3D {
             cur.fogFar = from.fogFar + (to.fogFar - from.fogFar) * t;
             cur.sunI = from.sunI + (to.sunI - from.sunI) * t;
             cur.windowI = from.windowI + (to.windowI - from.windowI) * t;
+            // Háttér-mezők (spec §4.6)
+            cur.starI = from.starI + (to.starI - from.starI) * t;
+            cur.celColor.lerpColors(from.celColor, to.celColor, t);
+            cur.celPos.lerpVectors(from.celPos, to.celPos, t);
+            cur.celSize = from.celSize + (to.celSize - from.celSize) * t;
+            cur.glowI = from.glowI + (to.glowI - from.glowI) * t;
             this._applyTheme(cur);
         }
         if (this.background) this.background.update();
@@ -143,6 +150,7 @@ export class World3D {
         for (const b of this.buildings) {
             b.mesh.material.emissiveIntensity = cur.windowI;
         }
+        if (this.background) this.background.applyTheme(cur);
     }
 
     /** Snapshot of the currently displayed theme state (handles mid-transition). */
@@ -150,6 +158,7 @@ export class World3D {
         const c = this._cur;
         return {
             sky: c.sky.clone(),
+            skyTop: c.skyTop.clone(),
             hemiSky: c.hemiSky.clone(),
             hemiGround: c.hemiGround.clone(),
             sun: c.sun.clone(),
@@ -157,6 +166,11 @@ export class World3D {
             fogFar: c.fogFar,
             sunI: c.sunI,
             windowI: c.windowI,
+            starI: c.starI,
+            celColor: c.celColor.clone(),
+            celPos: c.celPos.clone(),
+            celSize: c.celSize,
+            glowI: c.glowI,
         };
     }
 
