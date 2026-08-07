@@ -1,10 +1,10 @@
-# Boss-nevek + éra-ritkítás + 3D háttér Implementation Plan
+# Boss-elnevezés + éra-ritkítás + 3D háttér Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** A boss-részek nevet kapnak (6 mintás körforgás, +3 új minta), az éra-küszöbök ~3× ritkábbak lesznek (6000/16000/32000/55000), és a futó figura mögé teljes 3D háttér épül (gradiens ég-dóm + csillagok + égitest + sziluett-sávok), az éra-átmenetekkel szinkronban.
+**Goal:** A boss-részek generikus nevet kapnak (DANGER ZONE — warning + bónusz szöveg), az éra-küszöbök ~3× ritkábbak lesznek (6000/16000/32000/55000), és a futó figura mögé teljes 3D háttér épül (gradiens ég-dóm + csillagok + égitest + sziluett-sávok), az éra-átmenetekkel szinkronban.
 
-**Architecture:** A „2.5D mag, 3D héj" elv változatlan. A boss/éra-változások tiszta adat- és szöveg-módosítások a `js/game.js`-ben. A háttér új `js/background.js` modul (`Background3D`), amelyet a `World3D` meglévő téma-lerp gépezete hajt kibővített téma-mezőkkel. Nincs asset-fájl; minden primitív geometria vagy runtime canvas-textúra.
+**Architecture:** A „2.5D mag, 3D héj" elv változatlan. A boss/éra-változások tiszta adat- és szöveg-módosítások a `js/game.js`-ben (a bossPatterns struktúra változatlan). A háttér új `js/background.js` modul (`Background3D`), amelyet a `World3D` meglévő téma-lerp gépezete hajt kibővített téma-mezőkkel. Nincs asset-fájl; minden primitív geometria vagy runtime canvas-textúra.
 
 **Tech Stack:** Vanilla JS ES modulok, Three.js 0.170.0 (import map), HTML/CSS DOM overlay. Nincs build, nincs test framework.
 
@@ -15,7 +15,7 @@ Spec: `docs/superpowers/specs/2026-08-07-boss-nevek-es-hatter-design.md`
 - **Branch:** az implementáció a `feature/boss-nevek-es-hatter` branchen történik (main-ből, a plan-commit után).
 - Three.js pontosan **0.170.0** (jsdelivr import map); **nincs külső asset** — minden geometria/anyag/textúra kódból.
 - **Nincs test framework** — minden task böngészős manuális checklistet futtat (Playwright, FRISS PORT taskonként; a Playwright modul-cache miatt új port kell).
-- Logikai konstansok (sebesség, gravitáció, gap-ek, kombómax, HOTDOG_POINTS) **fagyasztva** — kivételek: `milestoneThresholds` (Task 1) és a `bossPatterns` struktúra (Task 2), spec szerint jóváhagyott.
+- Logikai konstansok (sebesség, gravitáció, gap-ek, kombómax, HOTDOG_POINTS) **fagyasztva** — kivétel: `milestoneThresholds` (Task 1), spec szerint jóváhagyott. A `bossPatterns` és a teljes boss-mechanika **változatlan** (Task 2 tiszta szövegcsere, spec §2 scope-korrekció 2026-08-07).
 - `leaderboard.js`, `audio.js`, `player.js`, `utils.js` **nem módosul**.
 - UI-szövegek **magyarul**; commitüzenetek: emoji + rövid magyar leírás.
 - A `window.__snacky = { game, world }` debug-handle **szándékolt, tartós** része a kódnak (spec §5) — commit előtt NEM törlendő (szakítás a korábbi ideiglenes-hook gyakorlattal).
@@ -31,7 +31,7 @@ Spec: `docs/superpowers/specs/2026-08-07-boss-nevek-es-hatter-design.md`
 **Interfaces:**
 - Produces: új küszöbök `[6000, 16000, 32000, 55000]` — a `world.setTheme(currentMilestone + 1)` mapping változatlan; `window.__snacky = { game, world }` (a későbbi taskok verifikációja ezt használja).
 
-- [ ] **Step 1: Küszöbök cseréje (js/game.js)**
+- [x] **Step 1: Küszöbök cseréje (js/game.js)**
 
 A konstruktorban:
 
@@ -51,7 +51,7 @@ A konstruktorban:
             // Trigger theme change: 6000→dawn(1), 16000→day(2), 32000→sunset(3), 55000→neon(4)
 ```
 
-- [ ] **Step 2: Tartós debug-handle (js/main.js)**
+- [x] **Step 2: Tartós debug-handle (js/main.js)**
 
 Az `init()`-ben, a `game = new Game(...)` sor utáni blokkba (az `onGameOver` callback környékén):
 
@@ -60,170 +60,40 @@ Az `init()`-ben, a `game = new Game(...)` sor utáni blokkba (az `onGameOver` ca
     window.__snacky = { game, world };
 ```
 
-- [ ] **Step 3: Verifikáció**
+- [x] **Step 3: Verifikáció** ✅ KÉSZ (commit e127f2a, review clean)
 
-`python3 -m http.server 8150` (háttérben), Playwright. Kattints a START gombra (`#start-btn`), majd:
-
-1. `page.evaluate(() => { window.__snacky.game.score = 5990; })` → 1-2 frame-en belül `page.evaluate(() => window.__snacky.game.milestoneBanner?.text)` === `'🌅 HAJNAL ÉRA!'`.
-2. Szekvenciálisan tovább: `score = 15990` → banner `'☀️ NAPPALI ÉRA!'`; `score = 31990` → `'🌆 NAPLEMENTE ÉRA!'`; `score = 54990` → `'🌃 NEON VÁROS!'`.
-3. Regresszió: friss reload + START után `score = 2000` → egy frame múlva `milestoneBanner` === `null` (a régi 2000-es küszöbnél már NEM vált).
-4. Console hibátlan.
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add js/game.js js/main.js
-git commit -m "🐌 Éra-küszöbök 6000/16000/32000/55000 + tartós __snacky debug-handle"
-```
+- [x] **Step 4: Commit** ✅ `🐌 Éra-küszöbök 6000/16000/32000/55000 + tartós __snacky debug-handle`
 
 ---
 
-### Task 2: Boss-nevek — 6 mintás körforgás
+### Task 2: Boss-szövegek — DANGER ZONE
 
 **Files:**
-- Modify: `js/game.js` (konstruktor bossPatterns + bossLastName; reset; warning-trigger; warning-vég; spawn-ciklus; pattern-complete; bónusz-szöveg; `_drawBossWarning`)
+- Modify: `js/game.js:462-464` (bónusz floating text), `js/game.js:997` (warning-banner szöveg)
 
 **Interfaces:**
-- Consumes: meglévő boss-mechanika (spawn 65 frame, `nextBossScore += 5000`, `Obstacle`/`Pit` konstruktorok) — változatlan.
-- Produces: `bossPatterns: Array<{ name: string, entries: Array<{ lane: number, type: string, span?: number }> }>`; `bossCurrentPattern.name`; `bossLastName: string`. A warning-banner szövege: `⚠️ {NÉV} KÖZELEG!`; a bónusz: `{NÉV} LEGYŐZVE! +500`.
+- Consumes: meglévő boss-mechanika — teljesen változatlan (`bossPatterns` csupasz tömbök tömbje, `bossPatternIndex % 3` ciklus, spawn 65 frame, `nextBossScore += 5000`).
+- Produces: warning-banner `⚠️ DANGER ZONE!`; bónusz floating text `DANGER ZONE LEGYŐZVE! +500`.
 
-- [ ] **Step 1: Konstruktor — bossPatterns átalakítás + bossLastName (js/game.js)**
+> **Scope-megjegyzés (2026-08-07, user-döntés):** az eredeti Task 2 hat nevesített
+> mintát és +3 új mintát tartalmazott; a user a névrendszert generikus
+> DANGER ZONE-ra egyszerűsítette, az új mintákat elvetve (spec §2
+> scope-korrekció). Ez a revidált, kötelező változat: tiszta szövegcsere.
 
-A teljes `// ── Boss encounters ──` blokk cseréje (js/game.js:159-179):
+- [ ] **Step 1: Warning-szöveg (js/game.js)**
 
-```js
-        // ── Boss encounters ──
-        // 6 elnevezett minta körbe-körbe; a név a warningon és a bónuszban jelenik meg.
-        // Minden lépés egysávos vagy garantáltan hagy szabad sávot (smart-spawn
-        // szabályokkal konzisztens: torony/guruló után nincs kordon).
-        this.bossActive = false;
-        this.bossWarning = false;
-        this.bossWarningTimer = 0;
-        this.bossPatternIndex = 0;
-        this.bossSpawnTimer = 0;
-        this.bossCurrentPattern = null;
-        this.bossPatternStep = 0;
-        this.nextBossScore = 5000;
-        this.bossRestTimer = 0;
-        this.bossLastName = '';
-        this.bossPatterns = [
-            // 1: Cikázó csapda — alternating lanes, always one side free
-            { name: 'CIKÁZÓ CSAPDA', entries: [
-                { lane: 0, type: 'crate' }, { lane: 2, type: 'crate' }, { lane: 0, type: 'barrel' },
-                { lane: 2, type: 'barrel' }, { lane: 1, type: 'barrier' }, { lane: 0, type: 'crate' }] },
-            // 2: Gödörmező — pits + barrels
-            { name: 'GÖDÖRMEZŐ', entries: [
-                { lane: 1, type: 'pit' }, { lane: 0, type: 'barrel' }, { lane: 2, type: 'pit' },
-                { lane: 1, type: 'barrel' }, { lane: 0, type: 'rolling_barrel' }, { lane: 2, type: 'crate' }] },
-            // 3: Kordon káosz — wide barriers, free lane alternates
-            { name: 'KORDON KÁOSZ', entries: [
-                { lane: 0, type: 'barrier', span: 2 }, { lane: 1, type: 'crate' }, { lane: 2, type: 'barrier' },
-                { lane: 0, type: 'crate' }, { lane: 1, type: 'barrier', span: 2 }, { lane: 2, type: 'barrel' }] },
-            // 4: Madárraj — oszcilláló madarak + könnyű földi lépések
-            { name: 'MADÁRRAJ', entries: [
-                { lane: 0, type: 'flying_bird' }, { lane: 2, type: 'flying_bird' }, { lane: 1, type: 'crate' },
-                { lane: 1, type: 'flying_bird' }, { lane: 0, type: 'barrel' }, { lane: 2, type: 'flying_bird' }] },
-            // 5: Toronyzóna — dupla ugrások, könnyű pihentetőkkel
-            { name: 'TORONYZÓNA', entries: [
-                { lane: 1, type: 'tall_crate' }, { lane: 0, type: 'crate' }, { lane: 2, type: 'tall_crate' },
-                { lane: 1, type: 'barrel' }, { lane: 0, type: 'tall_crate' }, { lane: 2, type: 'barrel' }] },
-            // 6: Hordóhömpöly — 40%-kal gyorsabb guruló hordók hullámokban
-            { name: 'HORDÓHÖMPÖLY', entries: [
-                { lane: 0, type: 'rolling_barrel' }, { lane: 2, type: 'rolling_barrel' }, { lane: 1, type: 'barrel' },
-                { lane: 1, type: 'rolling_barrel' }, { lane: 0, type: 'barrel' }, { lane: 2, type: 'rolling_barrel' }] },
-        ];
-```
-
-- [ ] **Step 2: reset() — bossLastName nullázása (js/game.js)**
-
-A `// Reset boss` blokk végére (a `this.bossRestTimer = 0;` sor után):
-
-```js
-        this.bossLastName = '';
-```
-
-- [ ] **Step 3: Mintaválasztás áthelyezése a warning KEZDETÉRE (js/game.js)**
-
-A boss-trigger ág (js/game.js:510-515):
+A `_drawBossWarning(ctx)`-ben (js/game.js:997):
 
 ```js
 // ELŐTTE:
-        // ── Boss check: trigger warning when score crosses threshold ──
-        if (!this.bossActive && !this.bossWarning && this.bossRestTimer <= 0 &&
-            this.score >= this.nextBossScore) {
-            this.bossWarning = true;
-            this.bossWarningTimer = 180; // 3 second warning
-        }
+        const text = '⚠️ BOSS KÖZELEG!';
 // UTÁNA:
-        // ── Boss check: trigger warning when score crosses threshold ──
-        if (!this.bossActive && !this.bossWarning && this.bossRestTimer <= 0 &&
-            this.score >= this.nextBossScore) {
-            this.bossWarning = true;
-            this.bossWarningTimer = 180; // 3 second warning
-            // A minta már a warning KEZDETÉN kiválasztásra kerül,
-            // hogy a banner a boss NEVÉT mutassa (spec §2.4).
-            this.bossCurrentPattern = this.bossPatterns[this.bossPatternIndex % this.bossPatterns.length];
-            this.bossPatternIndex++;
-        }
+        const text = '⚠️ DANGER ZONE!';
 ```
 
-A warning-vég ág (js/game.js:468-480):
+- [ ] **Step 2: Bónusz-szöveg (js/game.js)**
 
-```js
-// ELŐTTE:
-            if (this.bossWarningTimer <= 0) {
-                this.bossWarning = false;
-                this.bossActive = true;
-                // Pick a pattern
-                this.bossCurrentPattern = this.bossPatterns[this.bossPatternIndex % this.bossPatterns.length];
-                this.bossPatternIndex++;
-                this.bossPatternStep = 0;
-                this.bossSpawnTimer = 0;
-            }
-// UTÁNA:
-            if (this.bossWarningTimer <= 0) {
-                this.bossWarning = false;
-                this.bossActive = true;
-                // A minta a warning indításakor már kiválasztva (spec §2.4)
-                this.bossPatternStep = 0;
-                this.bossSpawnTimer = 0;
-            }
-```
-
-- [ ] **Step 4: Spawn-ciklus entries-re (js/game.js:483-497)**
-
-```js
-// ELŐTTE:
-                if (this.bossPatternStep < this.bossCurrentPattern.length) {
-                    const entry = this.bossCurrentPattern[this.bossPatternStep];
-// UTÁNA:
-                if (this.bossPatternStep < this.bossCurrentPattern.entries.length) {
-                    const entry = this.bossCurrentPattern.entries[this.bossPatternStep];
-```
-
-- [ ] **Step 5: Pattern-complete — név elmentése (js/game.js:501-506)**
-
-```js
-// ELŐTTE:
-                } else {
-                    // Pattern complete
-                    this.bossActive = false;
-                    this.bossCurrentPattern = null;
-                    this.bossRestTimer = 200; // rest period
-                    this.nextBossScore += 5000; // next boss at +5000
-                }
-// UTÁNA:
-                } else {
-                    // Pattern complete — a név megmarad a bónusz-szöveghez
-                    this.bossActive = false;
-                    this.bossLastName = this.bossCurrentPattern.name;
-                    this.bossCurrentPattern = null;
-                    this.bossRestTimer = 200; // rest period
-                    this.nextBossScore += 5000; // next boss at +5000
-                }
-```
-
-- [ ] **Step 6: Bónusz-szöveg névvel (js/game.js:462-464)**
+A boss rest-timer végén (js/game.js:462-464):
 
 ```js
 // ELŐTTE:
@@ -232,34 +102,25 @@ A warning-vég ág (js/game.js:468-480):
                 );
 // UTÁNA:
                 this.floatingTexts.push(
-                    new FloatingText(this.viewW / 2, this.viewH / 2 - 40, `${this.bossLastName} LEGYŐZVE! +500`, '#F1C40F')
+                    new FloatingText(this.viewW / 2, this.viewH / 2 - 40, 'DANGER ZONE LEGYŐZVE! +500', '#F1C40F')
                 );
 ```
 
-- [ ] **Step 7: Warning-banner névvel (js/game.js:997)**
+- [ ] **Step 3: Verifikáció**
 
-```js
-// ELŐTTE:
-        const text = '⚠️ BOSS KÖZELEG!';
-// UTÁNA:
-        const text = `⚠️ ${this.bossCurrentPattern ? this.bossCurrentPattern.name : 'BOSS'} KÖZELEG!`;
-```
+`python3 -m http.server 8151` (háttérben), Playwright, START gomb (`#start-btn`). A `window.__snacky` handle tartós, használd.
 
-- [ ] **Step 8: Verifikáció**
+**Fontos:** headless Chromiumban a rAF uncapped (~500 fps) — a frame-alapú timerek (180-frame warning, 200-frame rest, 50-frame floating text) ~0,3 s wall-clock alatt lejárnak. Ne wall-clock várakozással dolgozz, hanem frame-enkénti pollinggal egyetlen `browser_evaluate` async függvényben (`await new Promise(requestAnimationFrame)` lépésenként), és a figyelés alatt tartsd a játékos életét 99-en (`game.player.lives = 99`).
 
-`python3 -m http.server 8151`, Playwright, START gomb. (A `window.__snacky` handle tartós, használd.)
+1. **Warning:** `page.evaluate(() => { window.__snacky.game.score = 4950; })` → poll-old, amíg `window.__snacky.game.bossWarning === true` → a banner szövege „⚠️ DANGER ZONE!” (villog — több frame-en screenshotolj, legalább egyiken látszik). Screenshot: `task2-danger-warning.png`.
+2. **Bónusz:** amikor `bossActive === true`: `page.evaluate(() => { const g = window.__snacky.game; g.bossPatternStep = g.bossCurrentPattern.length; })` → a minta azonnal „befejeződik”, rest 200 frame → poll-old, amíg `window.__snacky.game.floatingTexts.some(ft => ft.text === 'DANGER ZONE LEGYŐZVE! +500')` true nem lesz (max ~2 s); screenshot `task2-danger-bonus.png`.
+3. **Regresszió:** a boss-minták változatlanul spawnolnak (a warning után akadályok/gödrök érkeznek — `game.obstacles.length + game.pits.length > 0` a boss alatt), ütközés működik; console hibátlan.
 
-1. Névlista: `page.evaluate(() => window.__snacky.game.bossPatterns.map(p => p.name))` === `['CIKÁZÓ CSAPDA', 'GÖDÖRMEZŐ', 'KORDON KÁOSZ', 'MADÁRRAJ', 'TORONYZÓNA', 'HORDÓHÖMPÖLY']`.
-2. Warning-név: `score = 4950` → várj ~1 s → `window.__snacky.game.bossWarning === true` ÉS `bossCurrentPattern.name === 'CIKÁZÓ CSAPDA'` (első boss reset után). Screenshot: a banner „⚠️ CIKÁZÓ CSAPDA KÖZELEG!" (a villogás miatt 2-3 screenshot egymás után, `task2-boss-warning.png`).
-3. Bónusz-név: `page.evaluate(() => { window.__snacky.game.player.lives = 99; })`, várj a boss-aktiválódásra (~2 s), majd `page.evaluate(() => { const g = window.__snacky.game; g.bossPatternStep = g.bossCurrentPattern.entries.length; })` → a minta azonnal „befejeződik", rest 200 frame (~3,3 s) → poll-old `page.evaluate(() => window.__snacky.game.floatingTexts.some(ft => ft.text.includes('LEGYŐZVE')))` true-ra (max ~6 s); screenshot `task2-boss-bonus.png` („CIKÁZÓ CSAPDA LEGYŐZVE! +500").
-4. Új minták spawnolnak: a következő bossoknál (`score = 10000`-hez állítva, majd 15000 stb. — vagy `bossPatternIndex` ellenőrzéssel) a `bossCurrentPattern.name` sorrendje: GÖDÖRMEZŐ → KORDON KÁOSZ → MADÁRRAJ → TORONYZÓNA → HORDÓHÖMPÖLY → (körbe) CIKÁZÓ CSAPDA.
-5. Regresszió: játssz egy boss-mintát végig kézzel is — az akadályok spawnolnak, ütközés működik. Console hibátlan.
-
-- [ ] **Step 9: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add js/game.js
-git commit -m "👹 Boss-nevek: 6 mintás körforgás, név a warningon és a bónuszban"
+git commit -m "⚠️ Boss-szövegek: DANGER ZONE"
 ```
 
 ---
@@ -620,13 +481,13 @@ A metódus végére (a buildings for-ciklus után, js/world.js:126-128 körül):
 
 - [ ] **Step 4: Verifikáció**
 
-`python3 -m http.server 8153`, Playwright, START gomb. Minden témára: `page.evaluate(i => window.__snacky.world.setTheme(i), N)` → várj 2500 ms (a 120 frame-es átmenet + ráhagyás) → screenshot + állapot-ellenőrzés.
+`python3 -m http.server 8153`, Playwright, START gomb. Minden témára: `page.evaluate(i => window.__snacky.world.setTheme(i), N)` → várj az átmenet végéig (frame-pollinggal: `world.themeT === 1`, ~120 frame + ráhagyás) → screenshot + állapot-ellenőrzés.
 
 1. **Hajnal (1):** ég meleg lilás-narancsos, nap alacsonyan jobbra, csillagok alig látszanak. `task4-dawn.png`.
 2. **Nap (2):** kék gradiens-ég, csillagok ELTŰNTEK, fényes nap magasan. `page.evaluate(() => window.__snacky.world.background._starBase)` === `0`. `task4-day.png`.
 3. **Naplemente (3):** nagy narancs nap mélyen, a sziluett-sáv mögé lapulhat; ég narancs-lila. `task4-sunset.png`.
 4. **Neon (4):** magenta hold, csillagok vissza, sziluett sötét lilás. `task4-neon.png`.
-5. **Folytonosság:** átmenet KÖZBEN (`setTheme(3)` után 1 s) újabb `setTheme(4)` → nincs ugrás/villanás (a `_snapshotCurrent` az új mezőkkel dolgozik). Console hibátlan.
+5. **Folytonosság:** átmenet KÖZBEN (`setTheme(3)` után ~1 s) újabb `setTheme(4)` → nincs ugrás/villanás (a `_snapshotCurrent` az új mezőkkel dolgozik). Console hibátlan.
 6. **Portrait:** `page.setViewportSize({ width: 390, height: 844 })` → reload → START → éj + nap screenshot (`task4-portrait-night.png`, `task4-portrait-day.png`) — a dóm mindenhol kitakar, a sziluett látszik.
 7. Console hibátlan végig.
 
@@ -653,7 +514,7 @@ git commit -m "🌅 Téma-lerp a háttérre: 5 éra teljes átmenettel"
 
 - [ ] billentyű: ←/→/Space/↑/↓, dupla ugrás, ground pound, csúszás
 - [ ] ütközés csak azonos sávban; invincibility-villogás
-- [ ] boss-warning a MINTA NEVÉVEL; a 6 név sorrendje helyes; bónusz `{NÉV} LEGYŐZVE! +500`
+- [ ] boss-warning „⚠️ DANGER ZONE!”; bónusz „DANGER ZONE LEGYŐZVE! +500”; a 3 boss-minta változatlanul körbe-körbe
 - [ ] éra-banner CSAK 6000/16000/32000/55000-nél (2000/12000/20000-nél NINCS)
 - [ ] háttér mind az 5 témán: gradiens ég, csillagok (napközben nincs), égitest helyes helyen, sziluett-sávok; átmenet sima
 - [ ] akadályok/gödrök/collectible-k jól olvashatók minden témán (a sziluett nem takar)
@@ -664,7 +525,7 @@ git commit -m "🌅 Téma-lerp a háttérre: 5 éra teljes átmenettel"
 
 - [ ] **Step 3: Vizuális review a felhasználóval**
 
-Mutasd meg a screenshotokat (5 téma fekvő + portrait, boss-warning, boss-bónusz) a felhasználónak jóváhagyásra. Hangolási igény (színek, méretek, sűrűség) esetén a `THEMES_3D` új mezői / `SKYLINE_BANDS` konstansok a hangolási felületek — a finomítás a spec §4.6 megjegyzése szerint megengedett, struktúra-változás nélkül.
+Mutasd meg a screenshotokat (5 téma fekvő + portrait, DANGER ZONE warning, DANGER ZONE LEGYŐZVE bónusz) a felhasználónak jóváhagyásra. Hangolási igény (színek, méretek, sűrűség) esetén a `THEMES_3D` új mezői / `SKYLINE_BANDS` konstansok a hangolási felületek — a finomítás a spec §4.6 megjegyzése szerint megengedett, struktúra-változás nélkül.
 
 - [ ] **Step 4: Commit (ha volt javítás/hangolás)**
 
@@ -677,7 +538,7 @@ git commit -m "✨ Boss/éra/háttér csomag — takarítás és regresszió"
 
 ## Self-Review jegyzetek
 
-- **Spec coverage:** §2 boss-nevek (struktúra, 6 minta, warning/bónusz-szöveg, név-rögzítés a warning elején) → Task 2; §3 éra-küszöbök → Task 1; §4 háttér (a-d komponensek, téma-mezők, bekötés) → Task 3 + Task 4; §5 debug-handle → Task 1 Step 2; §6 tesztelés → minden task verifikációs lépése + Task 5; §7 megkötések → Global Constraints; §8 YAGNI → nincs ellentmondó task.
-- **Type-consistency:** `bossPatterns` `{ name, entries }` — a spawn-ciklus `.entries.length`/`.entries[step]`-et használ (Task 2 Step 4), a név `bossCurrentPattern.name`/`bossLastName` konzisztens a Step 5/6/7-ben. `Background3D` API (`constructor(scene, theme)`, `applyTheme(cur)`, `update()`) azonos a Task 3/4-ben; a `cur`-mezők (`skyTop`, `starI`, `celColor`, `celPos` mint Vector3, `celSize`, `glowI`) azonosak a parseTheme/_snapshotCurrent/lerp/applyTheme láncolatban.
+- **Spec coverage:** §2 DANGER ZONE szövegek → Task 2; §3 éra-küszöbök → Task 1; §4 háttér (a-d komponensek, téma-mezők, bekötés) → Task 3 + Task 4; §5 debug-handle → Task 1 Step 2; §6 tesztelés → minden task verifikációs lépése + Task 5; §7 megkötések → Global Constraints; §8 YAGNI → nincs ellentmondó task. (§2 scope-korrekció 2026-08-07: a 6 mintás névrendszer és a +3 új minta user-döntésre kikerült — Task 2 revidálva.)
+- **Type-consistency:** `bossPatterns` változatlan (csupasz tömbök tömbje); a Task 2 gyors-forward snippetje ezért `bossCurrentPattern.length`-et használ (NEM `.entries`). `Background3D` API (`constructor(scene, theme)`, `applyTheme(cur)`, `update()`) azonos a Task 3/4-ben; a `cur`-mezők (`skyTop`, `starI`, `celColor`, `celPos` mint Vector3, `celSize`, `glowI`) azonosak a parseTheme/_snapshotCurrent/lerp/applyTheme láncolatban.
 - **Sorrend-érzékenység:** a Task 3 parseTheme-bővítése ELŐTT kell a Background3D-konstrukció (ugyanabban a taskban, Step 3 → Step 4), különben `cur.skyTop` undefined lenne. A Task 4 lerp-blokkja a Task 3 mezőire támaszkodik.
-- **Kockázat:** a `_drawBossWarning` a `bossCurrentPattern`-re támaszkodik — reset/edge esetben `null` → `'BOSS'` fallback (Task 2 Step 7). A boss-minta kiválasztásának áthelyezése a warning elejére nem változtatja a spawn-időzítést (a `bossSpawnTimer`/`bossPatternStep` továbbra is a warning-vég ágban nullázódik).
+- **Kockázat:** nincs strukturális boss-változás (Task 2 tiszta szövegcsere) — a boss-mechanika regressziója kizárt; a verifikáció a szöveghelyességet és a spawn-regressziót fedi.

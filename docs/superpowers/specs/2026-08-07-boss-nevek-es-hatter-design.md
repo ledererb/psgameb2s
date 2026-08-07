@@ -1,53 +1,30 @@
-# Snacky Dash 3D — Boss-nevek, éra-ritkítás, 3D háttér
+# Snacky Dash 3D — Boss-elnevezés, éra-ritkítás, 3D háttér
 
 Dátum: 2026-08-07
-Állapot: jóváhagyva (brainstorming után)
+Állapot: jóváhagyva (brainstorming után; §2 scope-korrekció user-döntésből)
 Előzmény: `2026-07-24-portrait-es-fullscreen-design.md` (portrait + PWA, lezárva)
 
 ## 1. Cél és háttér
 
 Három igény egy csomagban:
 
-1. **A boss-részek névtelenek.** Minden boss-alkalom ugyanaz a szöveg (`⚠️ BOSS KÖZELEG!`, `+500 BOSS BÓNUSZ!`), pedig a 3 különböző akadály-minta megérdemelne egy-egy felismerhető, minta-leíró nevet. Mivel a boss-threshold 5000-enként végtelenül ismétlődik, a 3 meglévő minta mellé +3 új, kézzel verifikált minta is készül, hogy ritkább legyen az ismétlődés (6-os körforgás).
+1. **A boss-részek névtelenek.** Minden boss-alkalom ugyanaz a szöveg (`⚠️ BOSS KÖZELEG!`, `+500 BOSS BÓNUSZ!`). A kérés: legyen valami név. A brainstorming során előbb 6 minta-leíró név (+3 új minta) született, de a user az implementáció kezdetekor ezt túlbonyolítottnak ítélte — **minden boss-rész egy generikus nevet kap: DANGER ZONE**, az új minták kikerülnek (lásd §2 scope-korrekció).
 2. **Túl sűrűn váltanak az érák.** A `[2000, 6000, 12000, 20000]` küszöbök a kombó-snowball miatt gyakorlatban ~15-40 mp-énként váltanak. A kérés: nagyobb, ~3× időbeli szünetek.
 3. **A futó figura mögött üres a háttér.** Játék közben a horizont egy sík színtömb (`scene.background` + köd), az út két oldalán épületek, de a távolban semmi. A kérés: látványos, jól kinéző háttér — a brainstorming során a **teljes csomag** választva (gradiens égbolt + égitest + csillagok + távoli város-sziluettek).
 
-## 2. Boss-nevek — 6 mintás körforgás
+## 2. Boss-elnevezés — generikus DANGER ZONE
 
-### 2.1 Adatstruktúra
+> **Scope-korrekció (2026-08-07, user-döntés):** az eredeti terv 6 minta-leíró
+> nevet (CIKÁZÓ CSAPDA, GÖDÖRMEZŐ, KORDON KÁOSZ, MADÁRRAJ, TORONYZÓNA,
+> HORDÓHÖMPÖLY) és +3 új, kézzel verifikált mintát tartalmazott. A user a
+> névrendszert túlbonyolítottnak ítélte („adjunk mindegyiknek egy generikus
+> nevet… DANGER ZONE legyen, azt kész"), a +3 új mintával együtt elvetve.
+> Az alábbi, jóval egyszerűbb változat a kötelező.
 
-A `js/game.js` `bossPatterns` mezője csupasz tömbökből `{ name, entries }` objektumok tömbjévé alakul. A minta-lépések formátuma változatlan (`{ lane, type, span? }`), a spawn-logika (65 frame-es ritmus, `bossPatternIndex`-ciklus) változatlan — csak `% 3` helyett `% 6`.
-
-### 2.2 A hat minta
-
-A meglévő 3 minta változatlan (sorrendjük is), mögéjük 3 új kerül. Jelölés: b/k/j = bal/közép/jobbra sáv (0/1/2).
-
-| # | Név | Lépések | Fő készség |
-|---|-----|---------|------------|
-| 1 | **CIKÁZÓ CSAPDA** | láda(b) → láda(j) → hordó(b) → hordó(j) → kordon(k) → láda(b) | oldalzás |
-| 2 | **GÖDÖRMEZŐ** | gödör(k) → hordó(b) → gödör(j) → hordó(k) → guruló hordó(b) → láda(j) | ugrás-időzítés |
-| 3 | **KORDON KÁOSZ** | kordon×2(b) → láda(k) → kordon(j) → láda(b) → kordon×2(k) → hordó(j) | csúszás |
-| 4 | **MADÁRRAJ** *(új)* | madár(b) → madár(j) → láda(k) → madár(k) → hordó(b) → madár(j) | oszcilláló levegő-akadály olvasása |
-| 5 | **TORONYZÓNA** *(új)* | torony(k) → láda(b) → torony(j) → hordó(k) → torony(b) → hordó(j) | dupla ugrás, könnyű pihentető lépésekkel |
-| 6 | **HORDÓHÖMPÖLY** *(új)* | guruló(b) → guruló(j) → hordó(k) → guruló(k) → hordó(b) → guruló(j) | 40%-kal gyorsabb guruló hordók ritmusa |
-
-Új minta-lépések konkrétumai:
-
-- **MADÁRRAJ:** `[{0,flying_bird},{2,flying_bird},{1,crate},{1,flying_bird},{0,barrel},{2,flying_bird}]`
-- **TORONYZÓNA:** `[{1,tall_crate},{0,crate},{2,tall_crate},{1,barrel},{0,tall_crate},{2,barrel}]`
-- **HORDÓHÖMPÖLY:** `[{0,rolling_barrel},{2,rolling_barrel},{1,barrel},{1,rolling_barrel},{0,barrel},{2,rolling_barrel}]`
-
-### 2.3 Megoldhatósági szabályok (az új mintákra is)
-
-- Minden lépés egysávos, vagy garantáltan marad szabad sáv (kivétel: a meglévő `span:2`-es kordon-lépések, amelyeknél a szabad sáv a harmadik).
-- Torony (`tall_crate`) után sosem jön kordon; guruló hordó után nincs kordon — konzisztens a `_spawnObstacle()` „smart spawn” szabályaival.
-- A 65 frame-es spawn-ritmus változatlan → a meglévő 3 mintával azonos reakcióablak.
-
-### 2.4 Megjelenés
-
-- Warning-banner: `⚠️ {NÉV} KÖZELEG!` (pl. „⚠️ GÖDÖRMEZŐ KÖZELEG!”) — a meglévő villogó piros stílus, a szöveg a `bossCurrentPattern.name`-ből jön. A név már a warning **kezdetekor** rögzül (a minta a warning végén dől el — a kiválasztást át kell hozni a warning-ág elé, hogy a banner a helyes nevet mutassa).
-- Legyőzés floating text: `{NÉV} LEGYŐZVE! +500` (a mostani „+500 BOSS BÓNUSZ!” helyett) — ehhez a legyőzött minta nevét a rest-timer indulásakor el kell tárolni (`bossLastName`).
-- A game-over stat (👹 Boss számláló) és a reset-logika változatlan.
+- A 3 meglévő boss-minta (zigzag; gödrök+hordók; széles kordonok) **teljesen változatlan** — sem struktúra-, sem tartalom-módosítás; a `bossPatterns` csupasz tömbök tömbje marad, a spawn-logika és a `bossPatternIndex % 3` ciklus is.
+- Warning-banner (`_drawBossWarning`): `⚠️ BOSS KÖZELEG!` → **`⚠️ DANGER ZONE!`**
+- Bónusz floating text (rest-timer végén): `+500 BOSS BÓNUSZ!` → **`DANGER ZONE LEGYŐZVE! +500`**
+- Minden más változatlan: boss-ritmus (5000 + n·5000), a game-over 👹 Boss számláló, a reset-logika.
 
 ## 3. Éra-küszöbök ~3× szünetekkel
 
@@ -115,7 +92,7 @@ Egy sor: `window.__snacky = { game, world }` az `init()` végén — a Playwrigh
 Nincs test framework — lokális HTTP szerver + Playwright vizuális verifikáció (a migrációs gyakorlat szerint):
 
 - **Háttér, 5 téma:** boot-screenshot (éj), majd `__snacky.world.setTheme(1..4)` + ~2,5 s várakozás képenként → ég-dóm gradiens, csillagok láthatósága, égitest pozíció/szín, sziluett-sávok olvashatósága; fekvő ÉS portrait nézet.
-- **Boss-nevek:** `__snacky.game.score = 4950` körül → warning-banner a minta nevével; a 6 minta sorrendje és neve helyes (`bossPatternIndex`-előretekintéssel); a bónusz-szöveg `{NÉV} LEGYŐZVE! +500`.
+- **Boss-szövegek:** `__snacky.game.score = 4950` körül → warning-banner „⚠️ DANGER ZONE!”; a bónusz-szöveg „DANGER ZONE LEGYŐZVE! +500”.
 - **Éra-küszöbök:** score kényszerítés 6000/16000/32000/55000 köré → banner + témaátmenet a helyes küszöbnél, sorrend nem törik meg; 2000-nél már NEM vált.
 - **Regresszió:** console hibátlan; akadály-olvashatóság (a sziluett sosem takar spawnolt akadályt); a teljes loop (start → boss → game over → restart); restart után éjszakai háttér.
 - A screenshotokat a felhasználó is átnézi a befejezés előtt.
@@ -123,14 +100,15 @@ Nincs test framework — lokális HTTP szerver + Playwright vizuális verifikác
 ## 7. Architektúra-megkötések (örökölt)
 
 - A „2.5D mag, 3D héj” elv változatlan: a logika logikai térben, a Three.js tiszta nézetréteg; a `Background3D` kizárólag nézet.
-- Logikai konstansok (sebesség, gravitáció, gap-ek, kombómax) **fagyasztva** — kivételek: a `milestoneThresholds` lista (§3) és a `bossPatterns` struktúra (§2), kifejezetten jóváhagyva.
+- Logikai konstansok (sebesség, gravitáció, gap-ek, kombómax) **fagyasztva** — kivétel: a `milestoneThresholds` lista (§3), kifejezetten jóváhagyott.
 - `leaderboard.js`, `audio.js`, `player.js`, `utils.js` nem módosul.
 - Nincs külső asset; minden geometria/anyag/textúra kódból.
 - UI-szövegek magyarul; commitüzenetek: emoji + rövid magyar leírás.
 
 ## 8. YAGNI — tudatosan kimarad
 
-- Boss-nehézség eszkaláció ciklusonként (kör-számláló, „VAD/ŐRÜLT” előtagok) — a brainstormingban a 6 mintás körforgás választva; nehézség-hangolás külön feature lehet később.
+- ~~6 minta-leíró boss-név + 3 új boss-minta~~ — a user scope-korrekciója szerint elvetve (§2); minden boss DANGER ZONE, a 3 meglévő minta marad.
+- Boss-nehézség eszkaláció ciklusonként (kör-számláló, „VAD/ŐRÜLT” előtagok) — nehézség-hangolás külön feature lehet később.
 - Sziluett-sávok scroll-ozása / animálása (statikus + kamera-parallax elég).
 - Csillagok „igazi” twinkle-e csillagonként (az anyag-szintű pulzálás elég).
 - Égitest-fázisok (holdfázis, nap pályája futam közben).
