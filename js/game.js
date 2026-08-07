@@ -460,7 +460,7 @@ export class Game {
                 this.score += 500;
                 this.bossesDefeated++;
                 this.floatingTexts.push(
-                    new FloatingText(this.viewW / 2, this.viewH / 2 - 40, '+500 BOSS BÓNUSZ!', '#F1C40F')
+                    new FloatingText(this.viewW / 2, this.viewH / 2 - 40, 'DANGER ZONE LEGYŐZVE! +500', '#F1C40F')
                 );
             }
         }
@@ -994,7 +994,7 @@ export class Game {
         ctx.fillStyle = '#E74C3C';
         ctx.strokeStyle = 'rgba(0,0,0,0.7)';
         ctx.lineWidth = 4;
-        const text = '⚠️ BOSS KÖZELEG!';
+        const text = '⚠️ DANGER ZONE!';
         ctx.strokeText(text, this.viewW / 2, y);
         ctx.fillText(text, this.viewW / 2, y);
 
