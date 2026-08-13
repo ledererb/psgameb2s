@@ -408,7 +408,7 @@ insert into scores (player_id, score, counts_for_team)
 insert into scores (player_id, score, counts_for_team)
   select id, 99999, false from players where nickname='Optout Pisti';
 insert into scores (player_id, score, counts_for_team)
-  select id, 20000, true from players where nickname like 'Kis%';
+  select id, 2000, true from players where nickname like 'Kis%';
 insert into scores (player_id, score) values
   ((select id from players where nickname='Egyéni Géza'), 50000);
 ```
