@@ -31,7 +31,7 @@ const COLS_GIM = ['gimnáziumi nevelés-oktatás'];
 const COLS_SZAK = ['szakgimnáziumi nevelés-oktatás', 'szakközépiskolai nevelés-oktatás',
     'szakiskolai nevelés-oktatás', 'technikum', 'szakképző iskola'];
 const COLS_SEN = ['készségfejlesztő iskolai nevelés-oktatás', 'fejlesztő nevelés-oktatás'];
-const has = (r, cols) => cols.some((c) => String(r[c]).trim() !== '');
+const has = (r, cols) => cols.some((c) => r[c] != null && String(r[c]).trim() !== ''); // undefined-oszlop védett
 const isSchool = (r) => has(r, COLS_ALT) || has(r, COLS_GIM) || has(r, COLS_SZAK) || has(r, COLS_SEN);
 
 function guessType(name, r) {
