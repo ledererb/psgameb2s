@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adatkezelési tájékoztató — Snacky Dash</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+        .privacy h1 { font-family: 'Bangers', cursive; letter-spacing: 2px; }
+        .privacy h2 { margin-top: 28px; font-size: 20px; }
+        .privacy p, .privacy li { line-height: 1.6; font-size: 15px; }
+        .legal-review {
+            border: 2px dashed #ffd23f; border-radius: 10px; padding: 12px 16px;
+            font-size: 13px; margin: 20px 0;
+        }
+        #delete-section { margin-top: 40px; border-top: 1px solid rgba(255,255,255,.15); padding-top: 24px; }
+    </style>
+</head>
+<body>
+    <div class="privacy">
+        <h1>🌭 Snacky Dash — Adatkezelési tájékoztató</h1>
+
+        <div class="legal-review">
+            ⚠️ <strong>TERVEZET</strong> — ez a szöveg a kampány indulása előtt
+            jogi felülvizsgálatra vár (spec §12/3). A zárójeles részek a
+            Pek-Snack által kitöltendők.
+        </div>
+
+        <h2>1. Adatkezelő</h2>
+        <p>[Pek-Snack Zrt. cím, elérhetőség] — a Back to School kampány szervezője.</p>
+
+        <h2>2. Milyen adatokat gyűjtünk?</h2>
+        <ul>
+            <li><strong>Becenév</strong> (kérünk, NE valódi neved add meg!)</li>
+            <li><strong>Iskola és osztály</strong> — <em>nem kötelező</em>, csak ha szeretnéd,
+                hogy a pontjaid az iskolád/osztályod versenyébe számítsanak</li>
+            <li><strong>Pontszámaid</strong> a játékban</li>
+            <li>A hozzájárulásod ténye és időpontja</li>
+        </ul>
+        <p><strong>Nem gyűjtünk:</strong> valódi nevet, e-mail címet, telefonszámot,
+            pontos tartózkodási helyet.</p>
+
+        <h2>3. Miért?</h2>
+        <p>A Back to School játékverseny lebonyolításához: ranglisták készítése és a
+            kampány végén <strong>sorsolás</strong> tartása a résztvevők között. Az iskolák
+            között a legmagasabb átlagpontot elérő iskola nyer.</p>
+
+        <h2>4. Meddig őrizzük?</h2>
+        <p>A kampány végéig ([záródátum]), legkésőbb azután 30 napig — ezután minden
+            adatot törlünk.</p>
+
+        <h2>5. 16 év alattiak</h2>
+        <p>Ha 16 év alatti vagy, a regisztrációhoz szülő/törvényes képviselő
+            hozzájárulása kell.</p>
+
+        <h2>6. Jogaid</h2>
+        <p>Bármikor kérheted adataid törlését (lásd lent), tájékoztatást kérhetsz az
+            adatkezelésről, és panasszal fordulhatsz a NAIH-hoz (naih.hu).</p>
+
+        <h2>7. Sorsolás és nyertes-értesítés</h2>
+        <p>Mivel nem tárolunk elérhetőséget, a nyertes(ek) becenevét az oldalon és a
+            kampány csatornáin tesszük közzé; a nyertes [X] napon belül jelentkezhet a
+            nyereményéért. Részletek: a játék hivatalos szabályzatában. [link]</p>
+
+        <div id="delete-section">
+            <h2>Adataim törlése</h2>
+            <p id="delete-info">Ha ezen az eszközön regisztráltál, itt törölheted a
+                regisztrációdat és az összes pontszámodat.</p>
+            <button id="delete-btn" class="btn btn-submit hidden">Végleges törlés</button>
+            <p id="delete-result"></p>
+            <p><a href="index.html">← Vissza a játékhoz</a></p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { api } from './js/api.js';
+        import { playerStore } from './js/player-store.js';
+
+        const btn = document.getElementById('delete-btn');
+        const result = document.getElementById('delete-result');
+        const player = playerStore.load();
+
+        if (!player) {
+            document.getElementById('delete-info').textContent =
+                'Ezen az eszközön nincs regisztrált játékos.';
+        } else {
+            document.getElementById('delete-info').innerHTML =
+                `Bejelentkezve: <strong>${player.nickname}</strong>. ` +
+                'A törlés végleges, a pontjaid is törlődnek.';
+            btn.classList.remove('hidden');
+            btn.addEventListener('click', async () => {
+                if (!confirm('Biztosan törlöd a regisztrációdat és minden pontodat?')) return;
+                btn.disabled = true;
+                try {
+                    await api.deleteMyData({ player_id: player.player_id, secret: player.secret });
+                    playerStore.clear();
+                    result.textContent = '✓ Adataid törölve. Köszönjük a játékot!';
+                } catch {
+                    result.textContent = 'A törlés nem sikerült. Próbáld újra később.';
+                    btn.disabled = false;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
