@@ -1,139 +1,94 @@
 // ============================================
-// Snacky Dash — Leaderboard (localStorage)
-// Stores email + score + date, shows top 10.
+// Snacky Dash B2S — Ranglista UI (spec §6.5)
+// 3 tab: Egyéni (sorsolás!) | Iskolák (átlag) |
+// Osztályok (összeg, iskolán belül).
+// Szerverről + localStorage cache-fallback.
 // ============================================
 
-const STORAGE_KEY = 'hotdog_dash_leaderboard';
-const MAX_ENTRIES = 50; // store up to 50, display top 10
+import { api } from './api.js';
+import { playerStore } from './player-store.js';
 
-export class Leaderboard {
-    constructor() {
-        this.scores = this._load();
+const MEDALS = ['🥇', '🥈', '🥉'];
+const fmt = (n) => Number(n).toLocaleString('hu-HU');
+
+export class LeaderboardUI {
+    constructor(listEl, noteEl) {
+        this.listEl = listEl;
+        this.noteEl = noteEl;
+        this.tab = 'individual';
+        this.classSchoolId = playerStore.load()?.school?.id ?? null;
     }
 
-    /**
-     * Add a new score entry.
-     * @returns {number} Rank (1-based) of the new entry.
-     */
-    addScore(email, score) {
-        const entry = {
-            email: email.trim().toLowerCase(),
-            score: Math.floor(score),
-            date: new Date().toISOString()
-        };
-        this.scores.push(entry);
-        this.scores.sort((a, b) => b.score - a.score);
-        if (this.scores.length > MAX_ENTRIES) {
-            this.scores = this.scores.slice(0, MAX_ENTRIES);
-        }
-        this._save();
-
-        // Return rank
-        return this.scores.findIndex(
-            s => s.email === entry.email && s.score === entry.score && s.date === entry.date
-        ) + 1;
-    }
-
-    /**
-     * Get top N scores.
-     */
-    getTopScores(limit = 10) {
-        return this.scores.slice(0, limit);
-    }
-
-    /**
-     * Get the highest score ever.
-     */
-    getHighScore() {
-        return this.scores.length > 0 ? this.scores[0].score : 0;
-    }
-
-    /**
-     * Get the highest score from today's entries.
-     * Matches entries whose ISO date string starts with today's YYYY-MM-DD.
-     */
-    getDailyHighScore() {
-        const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
-        let best = 0;
-        for (const entry of this.scores) {
-            if (entry.date && entry.date.startsWith(today) && entry.score > best) {
-                best = entry.score;
+    async show(tab = this.tab, { classSchoolId } = {}) {
+        this.tab = tab;
+        if (classSchoolId !== undefined) this.classSchoolId = classSchoolId;
+        const cached = playerStore.readLbCache(this.tab);
+        try {
+            const data = await this._fetch();
+            playerStore.cacheLb(this.tab, data);
+            this._render(data, null);
+        } catch {
+            if (cached) {
+                const when = new Date(cached.at).toLocaleString('hu-HU');
+                this._render(cached.data, `Offline — utolsó frissítés: ${when}`);
+            } else {
+                this.listEl.innerHTML =
+                    '<p class="lb-empty">Nem érhető el a szerver. Próbáld később!</p>';
             }
         }
-        return best;
     }
 
-    /**
-     * Mask an email for display: "jo***@gm***.com"
-     */
-    static maskEmail(email) {
-        const [local, domain] = email.split('@');
-        if (!domain) return email;
-        const parts = domain.split('.');
-        const maskedLocal = local.slice(0, 2) + '***';
-        const maskedDomain = parts[0].slice(0, 2) + '***';
-        return `${maskedLocal}@${maskedDomain}.${parts.slice(1).join('.')}`;
+    _fetch() {
+        if (this.tab === 'individual') return api.fetchIndividual();
+        if (this.tab === 'schools') return api.fetchSchools();
+        if (!this.classSchoolId) return Promise.resolve([]);
+        return api.fetchClasses(this.classSchoolId);
     }
 
-    /**
-     * Simple email validation.
-     */
-    static isValidEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    }
+    _render(data, cacheNote) {
+        const me = playerStore.load();
+        let note = '';
+        let html = '<table class="lb-table"><thead><tr>';
 
-    // ── Render into a DOM container ──
-
-    renderInto(container) {
-        const top = this.getTopScores(10);
-        if (top.length === 0) {
-            container.innerHTML = '<p class="lb-empty">Még nincs eredmény. Legyél az első!</p>';
-            return;
+        if (this.tab === 'individual') {
+            note = 'A nyereményt a résztvevők között <strong>sorsoljuk</strong> ki a kampány végén.';
+            html += '<th>#</th><th>Játékos</th><th>Iskola</th><th>Pont</th></tr></thead><tbody>';
+            data.forEach((r, i) => {
+                html += `<tr class="${i < 3 ? 'lb-top3' : ''} ${r.player_id === me?.player_id ? 'lb-own' : ''}">
+                    <td class="lb-rank">${MEDALS[i] ?? i + 1}</td>
+                    <td>${r.nickname}</td>
+                    <td>${r.school_name ?? '—'}</td>
+                    <td class="lb-score">${fmt(r.best_score)}</td></tr>`;
+            });
+        } else if (this.tab === 'schools') {
+            note = 'Az iskolák a játékosaik legjobb eredményeinek <strong>átlagával</strong> versenyeznek (min. 5 játékos).';
+            html += '<th>#</th><th>Iskola</th><th>Átlagpont</th><th>Játékos</th></tr></thead><tbody>';
+            data.forEach((r, i) => {
+                html += `<tr class="${i < 3 ? 'lb-top3' : ''} ${r.school_id === me?.school?.id ? 'lb-own' : ''}">
+                    <td class="lb-rank">${MEDALS[i] ?? i + 1}</td>
+                    <td>${r.name} <span class="lb-city">${r.city}</span></td>
+                    <td class="lb-score">${fmt(r.avg_score)}</td>
+                    <td>${r.player_count}</td></tr>`;
+            });
+        } else {
+            note = this.classSchoolId
+                ? 'Az osztályok a tagjaik legjobbjainak <strong>összegével</strong> versenyeznek.'
+                : 'Válassz iskolát a game over képernyőn, hogy lásd az osztályait!';
+            html += '<th>#</th><th>Osztály</th><th>Összpont</th><th>Tag</th></tr></thead><tbody>';
+            data.forEach((r, i) => {
+                html += `<tr class="${i < 3 ? 'lb-top3' : ''} ${r.class_id === me?.class?.id ? 'lb-own' : ''}">
+                    <td class="lb-rank">${MEDALS[i] ?? i + 1}</td>
+                    <td>${r.name}</td>
+                    <td class="lb-score">${fmt(r.total_score)}</td>
+                    <td>${r.player_count}</td></tr>`;
+            });
         }
-
-        let html = `
-            <table class="lb-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Játékos</th>
-                        <th>Pont</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        top.forEach((entry, i) => {
-            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
-            html += `
-                <tr class="${i < 3 ? 'lb-top3' : ''}">
-                    <td class="lb-rank">${medal}</td>
-                    <td class="lb-email">${Leaderboard.maskEmail(entry.email)}</td>
-                    <td class="lb-score">${entry.score.toLocaleString()}</td>
-                </tr>
-            `;
-        });
 
         html += '</tbody></table>';
-        container.innerHTML = html;
-    }
-
-    // ── Persistence ──
-
-    _load() {
-        try {
-            const data = localStorage.getItem(STORAGE_KEY);
-            return data ? JSON.parse(data) : [];
-        } catch {
-            return [];
-        }
-    }
-
-    _save() {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.scores));
-        } catch (e) {
-            console.warn('Failed to save leaderboard:', e);
+        if (data.length === 0) html = '<p class="lb-empty">Még nincs eredmény. Legyél az első!</p>';
+        this.listEl.innerHTML = html;
+        if (this.noteEl) {
+            this.noteEl.innerHTML = cacheNote ? `<span class="lb-cache-note">${cacheNote}</span>` : note;
         }
     }
 }

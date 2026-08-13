@@ -8,7 +8,10 @@
 import { CANVAS_WIDTH, CANVAS_HEIGHT, INITIAL_SPEED, MAX_SPEED, formatScore } from './utils.js';
 import { Game } from './game.js';
 import { AudioManager } from './audio.js';
-import { Leaderboard } from './leaderboard.js';
+import { api } from './api.js';
+import { playerStore } from './player-store.js';
+import { initRegistration } from './registration.js';
+import { LeaderboardUI } from './leaderboard.js';
 import { SceneManager } from './scene.js';
 import { World3D } from './world.js';
 
@@ -17,12 +20,17 @@ import { World3D } from './world.js';
 let state = 'menu'; // 'menu' | 'playing' | 'gameover'
 let canvas;
 let overlayCanvas, overlayCtx;
-let game, audio, leaderboard;
+let game, audio;
 let sceneMgr, world;
 let viewW = CANVAS_WIDTH, viewH = CANVAS_HEIGHT; // valós CSS-px viewport
 
 // Slide key tracking
 let slideKeyDown = false;
+
+let runStartTime = 0;         // futamidő-mérés (submit-score duration_ms)
+let pendingScore = null;      // beküldésre váró futam
+let submitTimer = null;       // visszatérő játékos auto-submit késleltetése
+let leaderboardGameover, leaderboardOverlay; // LeaderboardUI példányok
 
 // Touch tracking for swipe detection
 let touchStartX = 0;
@@ -33,8 +41,9 @@ let touchIsSliding = false;
 // DOM elements (cached)
 let menuScreen, gameOverScreen;
 let startBtn, restartBtn;
-let finalScoreEl, leaderboardContainer;
+let finalScoreEl;
 let highScoreEl;
+let saveResultEl, teamOptRow, teamOptCb, teamOptLabel, playerBadge;
 
 // ── Initialization ──
 
@@ -49,23 +58,65 @@ function init() {
     startBtn = document.getElementById('start-btn');
     restartBtn = document.getElementById('restart-btn');
     finalScoreEl = document.getElementById('final-score');
-    leaderboardContainer = document.getElementById('leaderboard-list');
     highScoreEl = document.getElementById('high-score');
+    saveResultEl = document.getElementById('save-result');
+    teamOptRow = document.getElementById('team-opt-row');
+    teamOptCb = document.getElementById('team-opt');
+    teamOptLabel = document.getElementById('team-opt-label');
+    playerBadge = document.getElementById('player-badge');
 
     // Create managers
     audio = new AudioManager();
-    leaderboard = new Leaderboard();
     sceneMgr = new SceneManager(canvas);
     world = new World3D(sceneMgr);
     game = new Game(audio, world, sceneMgr);
 
     // Szándékolt, TARTÓS debug-handle a vizuális verifikációkhoz (spec §5).
-    window.__snacky = { game, world };
+    window.__snacky = { game, world, playerStore, api };
+
+    leaderboardGameover = new LeaderboardUI(
+        document.getElementById('leaderboard-list'),
+        document.getElementById('lb-note'));
+    leaderboardOverlay = new LeaderboardUI(
+        document.getElementById('lb-overlay-list'), null);
+
+    // Tab-váltás mindkét példányban
+    document.querySelectorAll('.lb-tab').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            btn.closest('.lb-tabs').querySelectorAll('.lb-tab')
+                .forEach((b) => b.classList.toggle('active', b === btn));
+            const ui = btn.closest('#lb-overlay') ? leaderboardOverlay : leaderboardGameover;
+            ui.show(btn.dataset.tab);
+        });
+    });
+
+    document.getElementById('leaderboard-btn').addEventListener('click', () => {
+        document.getElementById('lb-overlay').classList.remove('hidden');
+        leaderboardOverlay.show('individual');
+    });
+    document.getElementById('lb-overlay-close').addEventListener('click', () => {
+        document.getElementById('lb-overlay').classList.add('hidden');
+    });
+
+    teamOptCb.addEventListener('change', () => {
+        // opt-in változás → újraütemezett beküldés az új értékkel
+        if (pendingScore && state === 'gameover') scheduleSubmit();
+    });
+
+    renderPlayerBadge();
+    flushOutbox();
 
     // Game over callback
     game.onGameOver = (score, stats) => {
         state = 'gameover';
+        pendingScore = {
+            score: Math.floor(score),
+            distance_m: Math.round(stats?.distance ?? 0),
+            duration_ms: Math.max(3000, Math.round(performance.now() - runStartTime)),
+            client_run_id: crypto.randomUUID(),
+        };
         showGameOverScreen(score, stats);
+        handlePostGame();
     };
 
     // Show high score on menu
@@ -234,6 +285,7 @@ function tryFullscreen() {
 }
 
 function startGame() {
+    runStartTime = performance.now();
     tryFullscreen();
     audio.init();
     audio.resume();
@@ -251,6 +303,8 @@ function startGame() {
 function showGameOverScreen(score, stats) {
     gameOverScreen.classList.remove('hidden');
     finalScoreEl.textContent = formatScore(score);
+    saveResultEl.classList.add('hidden');
+    document.getElementById('reg-overlay').classList.add('hidden');
 
     // Run stats
     if (stats) {
@@ -261,21 +315,119 @@ function showGameOverScreen(score, stats) {
     }
 
     // Show leaderboard
-    leaderboard.renderInto(leaderboardContainer);
+    leaderboardGameover.show('individual');
+}
+
+function handlePostGame() {
+    const player = playerStore.load();
+    if (player) {
+        // Visszatérő játékos: csapat-opt-in + auto-submit 1,5 mp múlva
+        const teamName = player.class
+            ? `${player.school?.name ?? ''} ${player.class.name}`.trim()
+            : player.school?.name ?? null;
+        teamOptRow.classList.toggle('hidden', !teamName);
+        if (teamName) teamOptLabel.textContent = `Ez a pont számítson ide: ${teamName}`;
+        scheduleSubmit();
+    } else {
+        // Új játékos: regisztrációs űrlap
+        initRegistration({
+            mode: 'register',
+            onRegistered: () => scheduleSubmit(),
+            onSkip: () => { pendingScore = null; },
+        });
+    }
+    leaderboardGameover.show('individual');
+}
+
+function scheduleSubmit() {
+    clearTimeout(submitTimer);
+    submitTimer = setTimeout(submitPendingScore, 1500);
+}
+
+async function submitPendingScore() {
+    if (!pendingScore) return;
+    const player = playerStore.load();
+    if (!player) return; // regisztráció közben megszakítva
+    const payload = {
+        player_id: player.player_id, secret: player.secret,
+        ...pendingScore,
+        counts_for_team: teamOptCb.checked,
+    };
+    saveResultEl.classList.remove('hidden');
+    saveResultEl.innerHTML = 'Mentés…';
+    try {
+        const stats = await api.submitScore(payload);
+        playerStore.setBest(stats.best_score ?? pendingScore.score);
+        playerStore.outboxRemove(pendingScore.client_run_id);
+        pendingScore = null;
+        renderSaveResult(stats);
+    } catch (e) {
+        if (e.code === 'rate_limited' || e.code === 'forbidden') {
+            saveResultEl.innerHTML = e.code === 'forbidden'
+                ? '<span class="sr-warn">A mentés nem sikerült — regisztrálj újra a „nem te vagy?" linkkel.</span>'
+                : '<span class="sr-warn">Túl gyors egymásután — a pontod később megy fel automatikusan.</span>';
+            if (e.code === 'rate_limited') playerStore.outboxAdd(payload);
+        } else {
+            playerStore.outboxAdd(payload);
+            saveResultEl.innerHTML =
+                '<span class="sr-warn">Nincs kapcsolat — a pontod az eszközödön van, később feltöltjük. ✓</span>';
+        }
+        pendingScore = null;
+    }
+}
+
+function renderSaveResult(stats) {
+    const parts = [`<span class="sr-good">Pont mentve! ✓</span>`];
+    parts.push(`🧑 Egyéni lista: <strong>#${stats.rank_individual}</strong>`);
+    if (stats.school) {
+        parts.push(stats.school.below_threshold
+            ? `🏫 Az iskolád még nincs ranglistán — még <strong>${5 - stats.school.players}</strong> játékos kell!`
+            : `🏫 Iskolád: <strong>#${stats.school.rank}</strong> (átlag ${formatScore(stats.school.avg)})`);
+    }
+    if (stats.class) {
+        parts.push(`👥 Osztályod: <strong>#${stats.class.rank}</strong> (${formatScore(stats.class.total)} pont)`);
+    }
+    saveResultEl.innerHTML = parts.join('<br>');
+    leaderboardGameover.show(leaderboardGameover.tab); // frissítés
+}
+
+async function flushOutbox() {
+    for (const entry of playerStore.outboxList()) {
+        try {
+            await api.submitScore(entry);
+            playerStore.outboxRemove(entry.client_run_id);
+        } catch { break; } // offline maradunk → megállunk, sorban jövünk vissza
+    }
+}
+
+function renderPlayerBadge() {
+    const player = playerStore.load();
+    if (!player) { playerBadge.classList.add('hidden'); return; }
+    const where = player.class
+        ? `${player.school?.name ?? ''}, ${player.class.name}`
+        : player.school?.name ?? 'egyéni játékos';
+    playerBadge.innerHTML =
+        `Szia, <strong>${player.nickname}</strong>! (${where})` +
+        `<a id="badge-edit">módosítás</a><a id="badge-reset">nem te vagy?</a>`;
+    playerBadge.classList.remove('hidden');
+    document.getElementById('badge-reset').addEventListener('click', () => {
+        if (confirm('Biztosan kijelentkezel? A regisztrációd a szerveren megmarad.')) {
+            playerStore.clear();
+            renderPlayerBadge();
+        }
+    });
+    document.getElementById('badge-edit').addEventListener('click', () => {
+        initRegistration({
+            mode: 'edit', prefill: player,
+            onRegistered: renderPlayerBadge, onSkip: () => {},
+        });
+    });
 }
 
 function updateHighScore() {
-    const hs = leaderboard.getHighScore();
-    const daily = leaderboard.getDailyHighScore();
+    const best = playerStore.getBest();
     if (highScoreEl) {
-        let text = '';
-        if (hs > 0) {
-            text = `🏆 Legjobb: ${formatScore(hs)}`;
-            if (daily > 0) {
-                text += ` | 📅 Mai rekord: ${formatScore(daily)}`;
-            }
-        }
-        highScoreEl.textContent = text;
+        highScoreEl.textContent = best > 0 ? `🏆 Személyes legjobb: ${formatScore(best)}` : '';
     }
 }
 
