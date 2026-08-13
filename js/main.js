@@ -15,6 +15,15 @@ import { LeaderboardUI } from './leaderboard.js';
 import { SceneManager } from './scene.js';
 import { World3D } from './world.js';
 
+// crypto.randomUUID régebbi böngészőkben nem létezik — RFC4122 v4 fallback
+function newRunId() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+    });
+}
+
 // ── State ──
 
 let state = 'menu'; // 'menu' | 'playing' | 'gameover'
@@ -23,6 +32,10 @@ let overlayCanvas, overlayCtx;
 let game, audio;
 let sceneMgr, world;
 let viewW = CANVAS_WIDTH, viewH = CANVAS_HEIGHT; // valós CSS-px viewport
+
+// Szerver-/user-adat HTML-escape innerHTML-interpolációhoz (XSS-védelem)
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // Slide key tracking
 let slideKeyDown = false;
@@ -113,7 +126,7 @@ function init() {
             score: Math.floor(score),
             distance_m: Math.round(stats?.distance ?? 0),
             duration_ms: Math.max(3000, Math.round(performance.now() - runStartTime)),
-            client_run_id: crypto.randomUUID(),
+            client_run_id: newRunId(),
         };
         showGameOverScreen(score, stats);
         handlePostGame();
@@ -336,7 +349,7 @@ function handlePostGame() {
             onSkip: () => { pendingScore = null; },
         });
     }
-    leaderboardGameover.show('individual');
+    // a ranglista-megjelenítés a showGameOverScreen-ben már lefutott — itt nem kell újra
 }
 
 function scheduleSubmit() {
@@ -404,10 +417,10 @@ function renderPlayerBadge() {
     const player = playerStore.load();
     if (!player) { playerBadge.classList.add('hidden'); return; }
     const where = player.class
-        ? `${player.school?.name ?? ''}, ${player.class.name}`
-        : player.school?.name ?? 'egyéni játékos';
+        ? `${esc(player.school?.name ?? '')}, ${esc(player.class.name)}`
+        : esc(player.school?.name ?? 'egyéni játékos');
     playerBadge.innerHTML =
-        `Szia, <strong>${player.nickname}</strong>! (${where})` +
+        `Szia, <strong>${esc(player.nickname)}</strong>! (${where})` +
         `<a id="badge-edit">módosítás</a><a id="badge-reset">nem te vagy?</a>`;
     playerBadge.classList.remove('hidden');
     document.getElementById('badge-reset').addEventListener('click', () => {

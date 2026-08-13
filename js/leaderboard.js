@@ -10,6 +10,9 @@ import { playerStore } from './player-store.js';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 const fmt = (n) => Number(n).toLocaleString('hu-HU');
+// Szerver-adatok HTML-escape-elése innerHTML-interpoláció előtt (XSS-védelem)
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 export class LeaderboardUI {
     constructor(listEl, noteEl) {
@@ -41,6 +44,11 @@ export class LeaderboardUI {
     _fetch() {
         if (this.tab === 'individual') return api.fetchIndividual();
         if (this.tab === 'schools') return api.fetchSchools();
+        // Frissen regisztrált játékosnál a konstruktorbeli érték még null volt —
+        // olvassuk újra, hogy reload nélkül is lássa az iskolája osztályait
+        if (this.classSchoolId == null) {
+            this.classSchoolId = playerStore.load()?.school?.id ?? null;
+        }
         if (!this.classSchoolId) return Promise.resolve([]);
         return api.fetchClasses(this.classSchoolId);
     }
@@ -56,8 +64,8 @@ export class LeaderboardUI {
             data.forEach((r, i) => {
                 html += `<tr class="${i < 3 ? 'lb-top3' : ''} ${r.player_id === me?.player_id ? 'lb-own' : ''}">
                     <td class="lb-rank">${MEDALS[i] ?? i + 1}</td>
-                    <td>${r.nickname}</td>
-                    <td>${r.school_name ?? '—'}</td>
+                    <td>${esc(r.nickname)}</td>
+                    <td>${esc(r.school_name ?? '—')}</td>
                     <td class="lb-score">${fmt(r.best_score)}</td></tr>`;
             });
         } else if (this.tab === 'schools') {
@@ -66,7 +74,7 @@ export class LeaderboardUI {
             data.forEach((r, i) => {
                 html += `<tr class="${i < 3 ? 'lb-top3' : ''} ${r.school_id === me?.school?.id ? 'lb-own' : ''}">
                     <td class="lb-rank">${MEDALS[i] ?? i + 1}</td>
-                    <td>${r.name} <span class="lb-city">${r.city}</span></td>
+                    <td>${esc(r.name)} <span class="lb-city">${esc(r.city)}</span></td>
                     <td class="lb-score">${fmt(r.avg_score)}</td>
                     <td>${r.player_count}</td></tr>`;
             });
@@ -78,7 +86,7 @@ export class LeaderboardUI {
             data.forEach((r, i) => {
                 html += `<tr class="${i < 3 ? 'lb-top3' : ''} ${r.class_id === me?.class?.id ? 'lb-own' : ''}">
                     <td class="lb-rank">${MEDALS[i] ?? i + 1}</td>
-                    <td>${r.name}</td>
+                    <td>${esc(r.name)}</td>
                     <td class="lb-score">${fmt(r.total_score)}</td>
                     <td>${r.player_count}</td></tr>`;
             });

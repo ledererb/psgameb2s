@@ -39,6 +39,7 @@ Deno.serve(async (req) => {
       const city = norm(String(ns.city ?? ''));
       const type = String(ns.type ?? 'egyeb');
       if (name.length < 4 || city.length < 2) return json({ error: 'school_invalid' }, 400);
+      if (/[<>]/.test(name) || /[<>]/.test(city)) return json({ error: 'school_invalid' }, 400);
       if (!SCHOOL_TYPES.includes(type)) return json({ error: 'school_type' }, 400);
       const { data: ex } = await sb.from('schools').select('id')
         .ilike('name', name).ilike('city', city).limit(1);
@@ -65,6 +66,7 @@ Deno.serve(async (req) => {
       }
       const cname = norm(String(b.new_class_name)).toUpperCase();
       if (cname.length < 1 || cname.length > 10) return json({ error: 'class_invalid' }, 400);
+      if (/[<>]/.test(cname)) return json({ error: 'class_invalid' }, 400);
       const sid = effectiveSchool ?? (await sb.from('players').select('school_id').eq('id', player_id).single()).data!.school_id;
       const { data: ex } = await sb.from('classes').select('id')
         .eq('school_id', sid).ilike('name', cname).limit(1);

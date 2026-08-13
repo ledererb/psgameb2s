@@ -2,6 +2,8 @@
 // Snacky Dash B2S — regisztrációs űrlap (spec §6.4)
 // Game over képernyőn jelenik meg új játékosnak;
 // 'edit' módban profil-módosítás (update-affiliation).
+// A DOM-elemek statikusak → a listenereket csak EGYSZER
+// kötjük (bound-guard), a hívásonkénti állapot modulszintű.
 // ============================================
 
 import { api } from './api.js';
@@ -17,167 +19,154 @@ const ERROR_TEXT = {
     network: 'Nincs kapcsolat a szerverrel. Próbáld újra!',
 };
 
-export function initRegistration({ mode = 'register', prefill = null, onRegistered, onSkip }) {
-    const $ = (id) => document.getElementById(id);
-    const overlay = $('reg-overlay');
-    const nickInput = $('reg-nickname');
-    const schoolInput = $('reg-school-input');
-    const results = $('reg-school-results');
-    const newSchoolBox = $('reg-school-new');
-    const classRow = $('reg-class-row');
-    const classSelect = $('reg-class-select');
-    const classNewInput = $('reg-class-new-input');
-    const consent = $('reg-consent');
-    const errorEl = $('reg-error');
-    const submitBtn = $('reg-submit');
-    const skipBtn = $('reg-skip');
+const $ = (id) => document.getElementById(id);
 
-    let selectedSchool = null; // {id} | {isNew:true}
-    let debounceTimer = null;
-    // edit módban CSAK a piszkált (módosított) mezők mennek a payloadba —
-    // különben az update-affiliation „iskolaváltás → osztály reset" szabálya
-    // törölné a meglévő osztályt egy üres mentésnél is
-    let schoolDirty = mode === 'register';
-    let classDirty = mode === 'register';
+// ── Modulszintű állapot (a listener-handlerek ezt olvassák) ──
+let els = null;          // cache-elt DOM-referenciák
+let bound = false;       // listenerek már fel vannak kötve
+let mode = 'register';   // 'register' | 'edit'
+let onRegisteredCb = null;
+let onSkipCb = null;
+let selectedSchool = null; // {id} | {isNew:true}
+let debounceTimer = null;
+// edit módban CSAK a piszkált (módosított) mezők mennek a payloadba —
+// különben az update-affiliation „iskolaváltás → osztály reset" szabálya
+// törölné a meglévő osztályt egy üres mentésnél is
+let schoolDirty = true;
+let classDirty = true;
+
+export function initRegistration({ mode: m = 'register', prefill = null, onRegistered, onSkip }) {
+    mode = m;
+    onRegisteredCb = onRegistered;
+    onSkipCb = onSkip;
+
+    if (!els) {
+        els = {
+            overlay: $('reg-overlay'),
+            nickInput: $('reg-nickname'),
+            schoolInput: $('reg-school-input'),
+            results: $('reg-school-results'),
+            newSchoolBox: $('reg-school-new'),
+            newSchoolName: $('reg-school-new-name'),
+            newSchoolCity: $('reg-school-new-city'),
+            newSchoolType: $('reg-school-new-type'),
+            classRow: $('reg-class-row'),
+            classSelect: $('reg-class-select'),
+            classNewInput: $('reg-class-new-input'),
+            consent: $('reg-consent'),
+            errorEl: $('reg-error'),
+            submitBtn: $('reg-submit'),
+            skipBtn: $('reg-skip'),
+        };
+    }
+
+    // ── F2: alaphelyzet — register módú, üres űrlap minden hívásnál ──
+    // (az edit mód inline elrejtései/disabled-jei így nem ragadnak be)
+    els.nickInput.disabled = false;
+    els.nickInput.value = '';
+    els.schoolInput.value = '';
+    els.results.classList.add('hidden');
+    els.results.innerHTML = '';
+    els.newSchoolBox.classList.add('hidden');
+    els.newSchoolName.value = '';
+    els.newSchoolCity.value = '';
+    els.newSchoolType.value = 'egyeb';
+    els.classRow.classList.add('hidden');
+    els.classSelect.innerHTML = '<option value="">Osztály (nem kötelező)…</option>';
+    els.classNewInput.value = '';
+    els.classNewInput.classList.add('hidden');
+    document.querySelector('.age-row').style.display = '';
+    document.querySelectorAll('input[name="reg-age"]').forEach((r) => { r.checked = false; });
+    els.consent.closest('.checkbox-row').style.display = '';
+    els.consent.checked = false;
+    els.errorEl.classList.add('hidden');
+    els.submitBtn.textContent = 'Pont mentése';
+    els.submitBtn.disabled = false;
+    selectedSchool = null;
+    clearTimeout(debounceTimer);
+    schoolDirty = mode === 'register';
+    classDirty = mode === 'register';
+
+    // ── F3: listenerek csak egyszer — különben minden hívás újabb
+    // submit-handlert rakna a statikus gombokra (duplikált beküldés) ──
+    if (!bound) {
+        bound = true;
+        bindListeners();
+    }
 
     // edit mód: prefill + consent/age elrejtése (már adott), update-affiliation hívás
     if (mode === 'edit' && prefill) {
-        nickInput.value = prefill.nickname ?? '';
-        nickInput.disabled = true; // becenév most nem módosítható (YAGNI)
+        els.nickInput.value = prefill.nickname ?? '';
+        els.nickInput.disabled = true; // becenév most nem módosítható (YAGNI)
         if (prefill.school) {
-            schoolInput.value = prefill.school.name;
+            els.schoolInput.value = prefill.school.name;
             selectedSchool = { id: prefill.school.id };
-            classRow.classList.remove('hidden');
+            els.classRow.classList.remove('hidden');
             loadClasses(prefill.school.id).then(() => {
-                if (prefill.class) classSelect.value = String(prefill.class.id);
+                if (prefill.class) els.classSelect.value = String(prefill.class.id);
             });
         }
         document.querySelector('.age-row').style.display = 'none';
-        consent.closest('.checkbox-row').style.display = 'none';
-        submitBtn.textContent = 'Mentés';
+        els.consent.closest('.checkbox-row').style.display = 'none';
+        els.submitBtn.textContent = 'Mentés';
     }
 
-    function showError(code) {
-        errorEl.textContent = ERROR_TEXT[code] ?? 'Valami nem sikerült. Próbáld újra!';
-        errorEl.classList.remove('hidden');
-    }
+    els.overlay.classList.remove('hidden');
+    setTimeout(() => els.nickInput.focus(), 150);
+}
 
+function bindListeners() {
     // ── Iskolakereső ──
-    schoolInput.addEventListener('input', () => {
+    els.schoolInput.addEventListener('input', () => {
         selectedSchool = null;
         schoolDirty = true;
         clearTimeout(debounceTimer);
-        const q = schoolInput.value.trim();
-        if (q.length < 2) { results.classList.add('hidden'); return; }
+        const q = els.schoolInput.value.trim();
+        if (q.length < 2) { els.results.classList.add('hidden'); return; }
         debounceTimer = setTimeout(async () => {
             let hits = [];
             try { hits = await api.searchSchools(q); } catch { /* offline: lista üres */ }
-            results.innerHTML = '';
+            els.results.innerHTML = '';
             hits.forEach((s) => {
                 const item = document.createElement('button');
                 item.type = 'button';
                 item.className = 'autocomplete-item';
                 item.textContent = `${s.name} — ${s.city}`;
                 item.addEventListener('click', () => pickSchool(s));
-                results.appendChild(item);
+                els.results.appendChild(item);
             });
             const addNew = document.createElement('button');
             addNew.type = 'button';
             addNew.className = 'autocomplete-item autocomplete-add';
             addNew.textContent = '➕ Nem találom — felveszem';
             addNew.addEventListener('click', () => {
-                results.classList.add('hidden');
-                newSchoolBox.classList.remove('hidden');
+                els.results.classList.add('hidden');
+                els.newSchoolBox.classList.remove('hidden');
                 selectedSchool = { isNew: true };
                 schoolDirty = true;
-                classRow.classList.remove('hidden');
+                els.classRow.classList.remove('hidden');
             });
-            results.appendChild(addNew);
-            results.classList.remove('hidden');
+            els.results.appendChild(addNew);
+            els.results.classList.remove('hidden');
         }, 300);
     });
 
-    function pickSchool(s) {
-        selectedSchool = { id: s.id };
-        schoolDirty = true;
-        schoolInput.value = `${s.name} — ${s.city}`;
-        results.classList.add('hidden');
-        newSchoolBox.classList.add('hidden');
-        classRow.classList.remove('hidden');
-        loadClasses(s.id);
-    }
-
-    async function loadClasses(schoolId) {
-        classSelect.innerHTML = '<option value="">Osztály (nem kötelező)…</option>';
-        try {
-            const classes = await api.getClasses(schoolId);
-            classes.forEach((c) => {
-                const opt = document.createElement('option');
-                opt.value = c.id; opt.textContent = c.name;
-                classSelect.appendChild(opt);
-            });
-        } catch { /* offline: csak új osztály adható */ }
-        const optNew = document.createElement('option');
-        optNew.value = '__new'; optNew.textContent = '➕ Új osztály…';
-        classSelect.appendChild(optNew);
-    }
-
-    classSelect.addEventListener('change', () => {
+    els.classSelect.addEventListener('change', () => {
         classDirty = true;
-        classNewInput.classList.toggle('hidden', classSelect.value !== '__new');
+        els.classNewInput.classList.toggle('hidden', els.classSelect.value !== '__new');
     });
 
-    // ── Payload-építés ──
-    function buildPayload() {
-        const p = {};
-        if (mode === 'register') {
-            p.nickname = nickInput.value.trim();
-            const age = document.querySelector('input[name="reg-age"]:checked');
-            p.consent_is_parent = age?.value === 'parent';
-        }
-        if (mode === 'register' || schoolDirty) {
-            if (selectedSchool?.id) p.school_id = selectedSchool.id;
-            else if (selectedSchool?.isNew) {
-                p.new_school = {
-                    name: $('reg-school-new-name').value,
-                    city: $('reg-school-new-city').value,
-                    type: $('reg-school-new-type').value,
-                };
-            }
-        }
-        if (mode === 'register' || classDirty) {
-            if (classSelect.value && classSelect.value !== '__new') p.class_id = Number(classSelect.value);
-            else if (classSelect.value === '__new' && classNewInput.value.trim()) {
-                p.new_class_name = classNewInput.value.trim();
-            }
-        }
-        return p;
-    }
-
-    function valid() {
-        if (mode === 'register') {
-            if (nickInput.value.trim().length < 2) return 'nickname_length';
-            if (!document.querySelector('input[name="reg-age"]:checked')) return 'age_required';
-            if (!consent.checked) return 'consent_required';
-        }
-        if (selectedSchool?.isNew) {
-            if ($('reg-school-new-name').value.trim().length < 4) return 'school_invalid';
-            if ($('reg-school-new-city').value.trim().length < 2) return 'school_invalid';
-        }
-        return null;
-    }
-
-    submitBtn.addEventListener('click', async () => {
-        errorEl.classList.add('hidden');
+    els.submitBtn.addEventListener('click', async () => {
+        els.errorEl.classList.add('hidden');
         const err = valid();
         if (err) {
-            errorEl.textContent = err === 'age_required' ? 'Válaszd ki a korcsoportot!'
+            els.errorEl.textContent = err === 'age_required' ? 'Válaszd ki a korcsoportot!'
                 : err === 'consent_required' ? 'A tájékoztató elfogadása kötelező.'
                 : ERROR_TEXT[err];
-            errorEl.classList.remove('hidden');
+            els.errorEl.classList.remove('hidden');
             return;
         }
-        submitBtn.disabled = true;
+        els.submitBtn.disabled = true;
         try {
             let player;
             if (mode === 'register') {
@@ -190,19 +179,86 @@ export function initRegistration({ mode = 'register', prefill = null, onRegister
                 player = { ...cur, school: res.school, class: res.class };
             }
             playerStore.save(player);
-            overlay.classList.add('hidden');
-            onRegistered(player);
+            els.overlay.classList.add('hidden');
+            onRegisteredCb?.(player);
         } catch (e) {
             showError(e.code);
-            submitBtn.disabled = false;
+            els.submitBtn.disabled = false;
         }
     });
 
-    skipBtn?.addEventListener('click', () => {
-        overlay.classList.add('hidden');
-        onSkip?.();
+    els.skipBtn?.addEventListener('click', () => {
+        els.overlay.classList.add('hidden');
+        onSkipCb?.();
     });
+}
 
-    overlay.classList.remove('hidden');
-    setTimeout(() => nickInput.focus(), 150);
+function pickSchool(s) {
+    selectedSchool = { id: s.id };
+    schoolDirty = true;
+    els.schoolInput.value = `${s.name} — ${s.city}`;
+    els.results.classList.add('hidden');
+    els.newSchoolBox.classList.add('hidden');
+    els.classRow.classList.remove('hidden');
+    loadClasses(s.id);
+}
+
+async function loadClasses(schoolId) {
+    els.classSelect.innerHTML = '<option value="">Osztály (nem kötelező)…</option>';
+    try {
+        const classes = await api.getClasses(schoolId);
+        classes.forEach((c) => {
+            const opt = document.createElement('option');
+            opt.value = c.id; opt.textContent = c.name;
+            els.classSelect.appendChild(opt);
+        });
+    } catch { /* offline: csak új osztály adható */ }
+    const optNew = document.createElement('option');
+    optNew.value = '__new'; optNew.textContent = '➕ Új osztály…';
+    els.classSelect.appendChild(optNew);
+}
+
+function showError(code) {
+    els.errorEl.textContent = ERROR_TEXT[code] ?? 'Valami nem sikerült. Próbáld újra!';
+    els.errorEl.classList.remove('hidden');
+}
+
+// ── Payload-építés ──
+function buildPayload() {
+    const p = {};
+    if (mode === 'register') {
+        p.nickname = els.nickInput.value.trim();
+        const age = document.querySelector('input[name="reg-age"]:checked');
+        p.consent_is_parent = age?.value === 'parent';
+    }
+    if (mode === 'register' || schoolDirty) {
+        if (selectedSchool?.id) p.school_id = selectedSchool.id;
+        else if (selectedSchool?.isNew) {
+            p.new_school = {
+                name: els.newSchoolName.value,
+                city: els.newSchoolCity.value,
+                type: els.newSchoolType.value,
+            };
+        }
+    }
+    if (mode === 'register' || classDirty) {
+        if (els.classSelect.value && els.classSelect.value !== '__new') p.class_id = Number(els.classSelect.value);
+        else if (els.classSelect.value === '__new' && els.classNewInput.value.trim()) {
+            p.new_class_name = els.classNewInput.value.trim();
+        }
+    }
+    return p;
+}
+
+function valid() {
+    if (mode === 'register') {
+        if (els.nickInput.value.trim().length < 2) return 'nickname_length';
+        if (!document.querySelector('input[name="reg-age"]:checked')) return 'age_required';
+        if (!els.consent.checked) return 'consent_required';
+    }
+    if (selectedSchool?.isNew) {
+        if (els.newSchoolName.value.trim().length < 4) return 'school_invalid';
+        if (els.newSchoolCity.value.trim().length < 2) return 'school_invalid';
+    }
+    return null;
 }
