@@ -44,11 +44,9 @@ export class LeaderboardUI {
     _fetch() {
         if (this.tab === 'individual') return api.fetchIndividual();
         if (this.tab === 'schools') return api.fetchSchools();
-        // Frissen regisztrált játékosnál a konstruktorbeli érték még null volt —
-        // olvassuk újra, hogy reload nélkül is lássa az iskolája osztályait
-        if (this.classSchoolId == null) {
-            this.classSchoolId = playerStore.load()?.school?.id ?? null;
-        }
+        // Frissen regisztrált / iskolát váltó játékosnál a tárolt érték stále
+        // lehet — mindig frissen olvassuk, hogy reload nélkül is helyes legyen
+        this.classSchoolId = playerStore.load()?.school?.id ?? null;
         if (!this.classSchoolId) return Promise.resolve([]);
         return api.fetchClasses(this.classSchoolId);
     }
