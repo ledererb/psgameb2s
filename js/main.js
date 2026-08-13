@@ -32,8 +32,8 @@ let touchIsSliding = false;
 
 // DOM elements (cached)
 let menuScreen, gameOverScreen;
-let startBtn, restartBtn, submitBtn;
-let emailInput, finalScoreEl, leaderboardContainer;
+let startBtn, restartBtn;
+let finalScoreEl, leaderboardContainer;
 let highScoreEl;
 
 // ── Initialization ──
@@ -48,8 +48,6 @@ function init() {
     gameOverScreen = document.getElementById('gameover-screen');
     startBtn = document.getElementById('start-btn');
     restartBtn = document.getElementById('restart-btn');
-    submitBtn = document.getElementById('submit-score-btn');
-    emailInput = document.getElementById('email-input');
     finalScoreEl = document.getElementById('final-score');
     leaderboardContainer = document.getElementById('leaderboard-list');
     highScoreEl = document.getElementById('high-score');
@@ -77,7 +75,6 @@ function init() {
 
     startBtn.addEventListener('click', startGame);
     restartBtn.addEventListener('click', startGame);
-    submitBtn.addEventListener('click', submitScore);
 
     // ── Keyboard input ──
 
@@ -185,11 +182,6 @@ function init() {
         handleAction();
     });
 
-    // Email input: submit on Enter
-    emailInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') submitScore();
-    });
-
     // Handle window resize for responsive canvas
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -259,9 +251,6 @@ function startGame() {
 function showGameOverScreen(score, stats) {
     gameOverScreen.classList.remove('hidden');
     finalScoreEl.textContent = formatScore(score);
-    emailInput.value = '';
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Pontszám mentése';
 
     // Run stats
     if (stats) {
@@ -272,29 +261,6 @@ function showGameOverScreen(score, stats) {
     }
 
     // Show leaderboard
-    leaderboard.renderInto(leaderboardContainer);
-
-    // Focus email input after short delay
-    setTimeout(() => emailInput.focus(), 300);
-}
-
-function submitScore() {
-    const email = emailInput.value.trim();
-    if (!Leaderboard.isValidEmail(email)) {
-        emailInput.classList.add('error');
-        emailInput.placeholder = 'Kérlek adj meg egy érvényes e-mailt!';
-        setTimeout(() => {
-            emailInput.classList.remove('error');
-            emailInput.placeholder = 'te@email.com';
-        }, 2000);
-        return;
-    }
-
-    const rank = leaderboard.addScore(email, game.getScore());
-    submitBtn.disabled = true;
-    submitBtn.textContent = `#${rank} helyen vagy! 🎉`;
-
-    // Refresh leaderboard display
     leaderboard.renderInto(leaderboardContainer);
 }
 
