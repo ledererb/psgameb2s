@@ -18,16 +18,6 @@ async function restGet(path) {
     return r.json();
 }
 
-async function restRpc(fn, body) {
-    const r = await fetch(`${REST}/rpc/${fn}`, {
-        method: 'POST',
-        headers: { ...REST_HEADERS, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-    });
-    if (!r.ok) throw Object.assign(new Error(`rpc_${r.status}`), { status: r.status });
-    return r.json();
-}
-
 async function edge(fn, body) {
     let r;
     try {
@@ -61,8 +51,6 @@ export const api = {
         restGet('leaderboard_schools?select=school_id,name,city,avg_score,player_count&limit=100'),
     fetchClasses: (schoolId) =>
         restGet(`leaderboard_classes?select=class_id,name,total_score,player_count&school_id=eq.${schoolId}&limit=100`),
-    getStats: (playerId) =>
-        restRpc('fn_player_stats', { p_player_id: playerId }),
 
     // ── Írás (Edge Functions) ──
     register: (payload) => edge('register', payload),

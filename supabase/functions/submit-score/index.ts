@@ -12,8 +12,9 @@ const CORS = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 
-// Konzervatív plauzibilitás (game.js: ~60 p/mp alap + kombó/2× szorzók +500 bónuszok)
-const MAX_SCORE_PER_SEC = 2000;
+// Konzervatív plauzibilitás (game.js: ~60 p/mp alap, de a kombó-szorzó és a
+// 2× pontszorzó együtt elit futamban 2000 p/mp fölé viheti — 4000 a biztonságos határ)
+const MAX_SCORE_PER_SEC = 4000;
 const BASE_ALLOWANCE = 5000;
 const MIN_DURATION_MS = 3_000;
 const MAX_DURATION_MS = 3_600_000; // 1 óra

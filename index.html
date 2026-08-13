@@ -137,6 +137,7 @@
                            autocomplete="off">
                     <div id="reg-school-results" class="autocomplete-results hidden"></div>
                 </div>
+                <button type="button" id="reg-leave-school" class="btn-link hidden">Nincs iskolám — kilépek az iskolai versenyből</button>
                 <div id="reg-school-new" class="school-new hidden">
                     <input type="text" id="reg-school-new-name" placeholder="Iskola neve" maxlength="120">
                     <input type="text" id="reg-school-new-city" placeholder="Település" maxlength="60">
@@ -187,7 +188,7 @@
                 <button class="lb-tab" data-tab="schools">🏫 Iskolák</button>
                 <button class="lb-tab" data-tab="classes">👥 Osztályok</button>
             </div>
-            <p class="lb-note">A nyereményt a résztvevők között sorsoljuk ki a kampány végén.</p>
+            <p id="lb-overlay-note" class="lb-note">A nyereményt a résztvevők között sorsoljuk ki a kampány végén.</p>
             <div id="lb-overlay-list"></div>
             <button id="lb-overlay-close" class="btn btn-primary">Vissza</button>
         </div>

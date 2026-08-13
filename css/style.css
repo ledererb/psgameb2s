@@ -595,6 +595,12 @@ kbd {
 }
 .autocomplete-item:hover, .autocomplete-item:focus { background: rgba(255,210,63,.15); }
 .autocomplete-add { color: #ffd23f; }
+.btn-link {
+    display: block; background: none; border: none; padding: 2px 0; margin: 2px 0 6px;
+    color: #ffd23f; opacity: .75; font-family: inherit; font-size: 12px;
+    text-decoration: underline; cursor: pointer;
+}
+.btn-link:hover { opacity: 1; }
 .school-new { padding: 8px; border: 1px dashed rgba(255,210,63,.4); border-radius: 10px; margin: 6px 0; }
 .age-row { margin: 10px 0; }
 .radio-row, .checkbox-row {

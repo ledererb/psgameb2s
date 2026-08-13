@@ -28,6 +28,7 @@ let mode = 'register';   // 'register' | 'edit'
 let onRegisteredCb = null;
 let onSkipCb = null;
 let selectedSchool = null; // {id} | {isNew:true}
+let leftSchool = false;    // edit mód: „Nincs iskolám / kilépek" → school_id: null
 let debounceTimer = null;
 // edit módban CSAK a piszkált (módosított) mezők mennek a payloadba —
 // különben az update-affiliation „iskolaváltás → osztály reset" szabálya
@@ -53,6 +54,7 @@ export function initRegistration({ mode: m = 'register', prefill = null, onRegis
             classRow: $('reg-class-row'),
             classSelect: $('reg-class-select'),
             classNewInput: $('reg-class-new-input'),
+            leaveBtn: $('reg-leave-school'),
             consent: $('reg-consent'),
             errorEl: $('reg-error'),
             submitBtn: $('reg-submit'),
@@ -65,6 +67,8 @@ export function initRegistration({ mode: m = 'register', prefill = null, onRegis
     els.nickInput.disabled = false;
     els.nickInput.value = '';
     els.schoolInput.value = '';
+    els.schoolInput.placeholder = 'Iskola keresése (nem kötelező)';
+    els.leaveBtn.classList.add('hidden');
     els.results.classList.add('hidden');
     els.results.innerHTML = '';
     els.newSchoolBox.classList.add('hidden');
@@ -83,6 +87,7 @@ export function initRegistration({ mode: m = 'register', prefill = null, onRegis
     els.submitBtn.textContent = 'Pont mentése';
     els.submitBtn.disabled = false;
     selectedSchool = null;
+    leftSchool = false;
     clearTimeout(debounceTimer);
     schoolDirty = mode === 'register';
     classDirty = mode === 'register';
@@ -102,6 +107,7 @@ export function initRegistration({ mode: m = 'register', prefill = null, onRegis
             els.schoolInput.value = prefill.school.name;
             selectedSchool = { id: prefill.school.id };
             els.classRow.classList.remove('hidden');
+            els.leaveBtn.classList.remove('hidden'); // iskola-elhagyás csak akkor értelmes, ha VAN iskola
             loadClasses(prefill.school.id).then(() => {
                 if (prefill.class) els.classSelect.value = String(prefill.class.id);
             });
@@ -119,6 +125,8 @@ function bindListeners() {
     // ── Iskolakereső ──
     els.schoolInput.addEventListener('input', () => {
         selectedSchool = null;
+        leftSchool = false; // gépelés = mégsem lép ki, új iskolát keres
+        els.schoolInput.placeholder = 'Iskola keresése (nem kötelező)';
         schoolDirty = true;
         clearTimeout(debounceTimer);
         const q = els.schoolInput.value.trim();
@@ -143,6 +151,7 @@ function bindListeners() {
                 els.results.classList.add('hidden');
                 els.newSchoolBox.classList.remove('hidden');
                 selectedSchool = { isNew: true };
+                leftSchool = false;
                 schoolDirty = true;
                 els.classRow.classList.remove('hidden');
             });
@@ -154,6 +163,20 @@ function bindListeners() {
     els.classSelect.addEventListener('change', () => {
         classDirty = true;
         els.classNewInput.classList.toggle('hidden', els.classSelect.value !== '__new');
+    });
+
+    // ── „Nincs iskolám / kilépek" (csak edit módban látszik) ──
+    els.leaveBtn.addEventListener('click', () => {
+        leftSchool = true;
+        selectedSchool = null;
+        schoolDirty = true;
+        classDirty = false; // a function school=null esetén maga nullázza a classt
+        els.schoolInput.value = '';
+        els.schoolInput.placeholder = 'Iskola elhagyva — egyénileg versenyzel (vagy keress újat)';
+        els.results.classList.add('hidden');
+        els.newSchoolBox.classList.add('hidden');
+        els.classRow.classList.add('hidden');
+        els.leaveBtn.classList.add('hidden');
     });
 
     els.submitBtn.addEventListener('click', async () => {
@@ -195,8 +218,10 @@ function bindListeners() {
 
 function pickSchool(s) {
     selectedSchool = { id: s.id };
+    leftSchool = false;
     schoolDirty = true;
     els.schoolInput.value = `${s.name} — ${s.city}`;
+    els.schoolInput.placeholder = 'Iskola keresése (nem kötelező)';
     els.results.classList.add('hidden');
     els.newSchoolBox.classList.add('hidden');
     els.classRow.classList.remove('hidden');
@@ -232,7 +257,8 @@ function buildPayload() {
         p.consent_is_parent = age?.value === 'parent';
     }
     if (mode === 'register' || schoolDirty) {
-        if (selectedSchool?.id) p.school_id = selectedSchool.id;
+        if (leftSchool) p.school_id = null; // iskola-elhagyás (a function a classt is nullázza)
+        else if (selectedSchool?.id) p.school_id = selectedSchool.id;
         else if (selectedSchool?.isNew) {
             p.new_school = {
                 name: els.newSchoolName.value,

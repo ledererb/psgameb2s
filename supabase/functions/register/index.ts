@@ -79,6 +79,14 @@ Deno.serve(async (req) => {
   let classId: number | null = (b.class_id as number) ?? null;
   if ((classId || b.new_class_name) && !schoolId) return json({ error: 'class_requires_school' }, 400);
   if (classId && b.new_class_name) return json({ error: 'class_conflict' }, 400);
+  // class↔school kereszt-validáció: közvetlen class_id-nál a classnak a
+  // feloldott iskolához kell tartoznia (különben idegen iskola osztályára lehetne regisztrálni)
+  if (classId) {
+    const { data: cls } = await sb.from('classes').select('school_id').eq('id', classId).limit(1);
+    if (!cls?.length || cls[0].school_id !== schoolId) {
+      return json({ error: 'class_school_mismatch' }, 400);
+    }
+  }
   if (!classId && b.new_class_name) {
     const cname = norm(String(b.new_class_name)).toUpperCase();
     if (cname.length < 1 || cname.length > 10) return json({ error: 'class_invalid' }, 400);

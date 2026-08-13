@@ -16,3 +16,6 @@ task*.png
 .playwright-mcp/
 .supabase-env
 supabase/.temp/
+
+# Netlify build output
+dist/

@@ -1,6 +1,6 @@
 [build]
-  publish = "."
-  command = ""
+  publish = "dist"
+  command = "rm -rf dist && mkdir dist && cp -r index.html privacy.html css js assets icons manifest.json dist/"
 
 [[headers]]
   for = "/*"

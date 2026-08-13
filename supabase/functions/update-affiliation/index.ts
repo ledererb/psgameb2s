@@ -57,6 +57,22 @@ Deno.serve(async (req) => {
   if ('class_id' in b || 'new_class_name' in b) {
     if (b.class_id && b.new_class_name) return json({ error: 'class_conflict' }, 400);
     classId = (b.class_id as number) ?? null;
+    // class↔school kereszt-validáció: közvetlen class_id-nál a classnak a
+    // ténylegesen beállítandó (vagy változatlan) iskolához kell tartoznia
+    if (classId) {
+      let effSchool: number | null;
+      if (schoolId !== undefined) {
+        effSchool = schoolId;
+      } else {
+        const { data: cur } = await sb.from('players').select('school_id').eq('id', player_id).single();
+        effSchool = cur?.school_id ?? null;
+      }
+      if (!effSchool) return json({ error: 'class_requires_school' }, 400);
+      const { data: cls } = await sb.from('classes').select('school_id').eq('id', classId).limit(1);
+      if (!cls?.length || cls[0].school_id !== effSchool) {
+        return json({ error: 'class_school_mismatch' }, 400);
+      }
+    }
     if (!classId && b.new_class_name) {
       const effectiveSchool = schoolId !== undefined ? schoolId : undefined;
       if (effectiveSchool === null || effectiveSchool === undefined) {

@@ -91,7 +91,8 @@ function init() {
         document.getElementById('leaderboard-list'),
         document.getElementById('lb-note'));
     leaderboardOverlay = new LeaderboardUI(
-        document.getElementById('lb-overlay-list'), null);
+        document.getElementById('lb-overlay-list'),
+        document.getElementById('lb-overlay-note'));
 
     // Tab-váltás mindkét példányban
     document.querySelectorAll('.lb-tab').forEach((btn) => {
@@ -327,7 +328,10 @@ function showGameOverScreen(score, stats) {
         document.getElementById('stat-bosses').textContent = stats.bosses;
     }
 
-    // Show leaderboard
+    // Tab-active reset: az egyéni tab legyen aktív — az előző game overen
+    // történt tab-váltás ne ragadjon bele a gombok állapotába
+    gameOverScreen.querySelectorAll('.lb-tab').forEach((b) =>
+        b.classList.toggle('active', b.dataset.tab === 'individual'));
     leaderboardGameover.show('individual');
 }
 
@@ -374,16 +378,25 @@ async function submitPendingScore() {
         playerStore.outboxRemove(pendingScore.client_run_id);
         pendingScore = null;
         renderSaveResult(stats);
+        // sikeres beküldés után a sorban várakozó korábbi futamok is menjenek fel (spec §6.6)
+        flushOutbox().catch(() => {});
     } catch (e) {
-        if (e.code === 'rate_limited' || e.code === 'forbidden') {
-            saveResultEl.innerHTML = e.code === 'forbidden'
-                ? '<span class="sr-warn">A mentés nem sikerült — regisztrálj újra a „nem te vagy?" linkkel.</span>'
-                : '<span class="sr-warn">Túl gyors egymásután — a pontod később megy fel automatikusan.</span>';
-            if (e.code === 'rate_limited') playerStore.outboxAdd(payload);
-        } else {
+        // Csak az újrapróbálható hibák kerülnek outboxba: rate_limited, network, 5xx.
+        // A 4xx szerver-elutasítások (score_implausible, duration_invalid, score_invalid,
+        // forbidden, missing_credentials) újrapróbálva sem mennének át — nem mentjük el.
+        const retriable = e.code === 'rate_limited' || e.code === 'network' || (e.status ?? 0) >= 500;
+        if (retriable) {
             playerStore.outboxAdd(payload);
+            saveResultEl.innerHTML = e.code === 'rate_limited'
+                ? '<span class="sr-warn">Túl gyors egymásután — a pontod később megy fel automatikusan.</span>'
+                : '<span class="sr-warn">Nincs kapcsolat — a pontod az eszközödön van, később feltöltjük. ✓</span>';
+        } else if (e.code === 'score_implausible' || e.code === 'duration_invalid' || e.code === 'score_invalid') {
             saveResultEl.innerHTML =
-                '<span class="sr-warn">Nincs kapcsolat — a pontod az eszközödön van, később feltöltjük. ✓</span>';
+                '<span class="sr-warn">Ezt a futamot a szerver nem fogadta el (szokatlan adat).</span>';
+        } else {
+            // forbidden / missing_credentials / egyéb 4xx
+            saveResultEl.innerHTML =
+                '<span class="sr-warn">A mentés nem sikerült — regisztrálj újra a „nem te vagy?" linkkel.</span>';
         }
         pendingScore = null;
     }
@@ -409,7 +422,13 @@ async function flushOutbox() {
         try {
             await api.submitScore(entry);
             playerStore.outboxRemove(entry.client_run_id);
-        } catch { break; } // offline maradunk → megállunk, sorban jövünk vissza
+        } catch (e) {
+            // Csak network / rate_limited / 5xx esetén állunk meg (offline vagy
+            // ideiglenes szerverhiba → sorban visszajövünk). A 4xx elutasítások
+            // újrapróbálva sem mennének át → kidobjuk az entry-t és folytatjuk.
+            if (e.code === 'rate_limited' || e.code === 'network' || (e.status ?? 0) >= 500) break;
+            playerStore.outboxRemove(entry.client_run_id);
+        }
     }
 }
 
