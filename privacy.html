@@ -86,9 +86,12 @@
             document.getElementById('delete-info').textContent =
                 'Ezen az eszközön nincs regisztrált játékos.';
         } else {
-            document.getElementById('delete-info').innerHTML =
-                `Bejelentkezve: <strong>${player.nickname}</strong>. ` +
-                'A törlés végleges, a pontjaid is törlődnek.';
+            // nickname a localStorage-ból (kliens-kontrollált) → DOM-építéssel, nem innerHTML-lel
+            const info = document.getElementById('delete-info');
+            info.textContent = 'Bejelentkezve: ';
+            const strong = document.createElement('strong');
+            strong.textContent = player.nickname;
+            info.append(strong, '. A törlés végleges, a pontjaid is törlődnek.');
             btn.classList.remove('hidden');
             btn.addEventListener('click', async () => {
                 if (!confirm('Biztosan törlöd a regisztrációdat és minden pontodat?')) return;
@@ -96,6 +99,8 @@
                 try {
                     await api.deleteMyData({ player_id: player.player_id, secret: player.secret });
                     playerStore.clear();
+                    btn.classList.add('hidden');
+                    info.textContent = 'A regisztrációd törölve lett.';
                     result.textContent = '✓ Adataid törölve. Köszönjük a játékot!';
                 } catch {
                     result.textContent = 'A törlés nem sikerült. Próbáld újra később.';
