@@ -104,58 +104,6 @@
                     <span id="team-opt-label">Ez a pont számítson a csapatomnak</span>
                 </label>
 
-                <!-- Új játékos: regisztrációs űrlap -->
-                <div id="reg-overlay" class="reg-form hidden">
-                    <p class="form-label">Mentsd el a pontod és nyerj!</p>
-                    <input type="text" id="reg-nickname" placeholder="Becenév (nem valódi neved!)"
-                           maxlength="20" autocomplete="off">
-                    <p class="form-hint">Ha megadod az iskoládat (és az osztályodat), a pontjaid
-                        az ő versenyükbe is számítanak. Nem vagy diák? Hagyd üresen —
-                        egyénileg is részt veszel a sorsoláson.</p>
-                    <div class="autocomplete">
-                        <input type="text" id="reg-school-input" placeholder="Iskola keresése (nem kötelező)"
-                               autocomplete="off">
-                        <div id="reg-school-results" class="autocomplete-results hidden"></div>
-                    </div>
-                    <div id="reg-school-new" class="school-new hidden">
-                        <input type="text" id="reg-school-new-name" placeholder="Iskola neve" maxlength="120">
-                        <input type="text" id="reg-school-new-city" placeholder="Település" maxlength="60">
-                        <select id="reg-school-new-type">
-                            <option value="altalanos">Általános iskola</option>
-                            <option value="gimnazium">Gimnázium</option>
-                            <option value="szakkozep">Szakközépiskola / technikum</option>
-                            <option value="egyeb" selected>Egyéb</option>
-                        </select>
-                    </div>
-                    <div id="reg-class-row" class="hidden">
-                        <select id="reg-class-select">
-                            <option value="">Osztály (nem kötelező)…</option>
-                        </select>
-                        <input type="text" id="reg-class-new-input" class="hidden"
-                               placeholder="Új osztály (pl. 10.A)" maxlength="10">
-                    </div>
-                    <div class="age-row">
-                        <label class="radio-row">
-                            <input type="radio" name="reg-age" value="adult">
-                            <span>16 éves vagy idősebb vagyok</span>
-                        </label>
-                        <label class="radio-row">
-                            <input type="radio" name="reg-age" value="parent">
-                            <span>16 év alatti vagyok, a szülőm hozzájárult</span>
-                        </label>
-                    </div>
-                    <label class="checkbox-row">
-                        <input type="checkbox" id="reg-consent">
-                        <span>Elolvastam és elfogadom az
-                            <a href="privacy.html" target="_blank">adatkezelési tájékoztatót</a></span>
-                    </label>
-                    <p id="reg-error" class="form-error hidden"></p>
-                    <div class="input-group">
-                        <button id="reg-submit" class="btn btn-submit">Pont mentése</button>
-                        <button id="reg-skip" class="btn btn-ghost">Kihagyom</button>
-                    </div>
-                </div>
-
                 <div class="leaderboard-section">
                     <h3 class="lb-title">🏆 Ranglista</h3>
                     <div class="lb-tabs">
@@ -170,6 +118,62 @@
                 <button id="restart-btn" class="btn btn-primary">
                     <span class="btn-icon">🔄</span> Újra!
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ Regisztrációs / profil-szerkesztő overlay (menüből és game overből is nyílik) ═══════════════ -->
+    <div id="reg-overlay" class="screen overlay hidden">
+        <div class="screen-content gameover-content">
+            <div class="reg-form">
+                <p class="form-label">Mentsd el a pontod és nyerj!</p>
+                <input type="text" id="reg-nickname" placeholder="Becenév (nem valódi neved!)"
+                       maxlength="20" autocomplete="off">
+                <p class="form-hint">Ha megadod az iskoládat (és az osztályodat), a pontjaid
+                    az ő versenyükbe is számítanak. Nem vagy diák? Hagyd üresen —
+                    egyénileg is részt veszel a sorsoláson.</p>
+                <div class="autocomplete">
+                    <input type="text" id="reg-school-input" placeholder="Iskola keresése (nem kötelező)"
+                           autocomplete="off">
+                    <div id="reg-school-results" class="autocomplete-results hidden"></div>
+                </div>
+                <div id="reg-school-new" class="school-new hidden">
+                    <input type="text" id="reg-school-new-name" placeholder="Iskola neve" maxlength="120">
+                    <input type="text" id="reg-school-new-city" placeholder="Település" maxlength="60">
+                    <select id="reg-school-new-type">
+                        <option value="altalanos">Általános iskola</option>
+                        <option value="gimnazium">Gimnázium</option>
+                        <option value="szakkozep">Szakközépiskola / technikum</option>
+                        <option value="egyeb" selected>Egyéb</option>
+                    </select>
+                </div>
+                <div id="reg-class-row" class="hidden">
+                    <select id="reg-class-select">
+                        <option value="">Osztály (nem kötelező)…</option>
+                    </select>
+                    <input type="text" id="reg-class-new-input" class="hidden"
+                           placeholder="Új osztály (pl. 10.A)" maxlength="10">
+                </div>
+                <div class="age-row">
+                    <label class="radio-row">
+                        <input type="radio" name="reg-age" value="adult">
+                        <span>16 éves vagy idősebb vagyok</span>
+                    </label>
+                    <label class="radio-row">
+                        <input type="radio" name="reg-age" value="parent">
+                        <span>16 év alatti vagyok, a szülőm hozzájárult</span>
+                    </label>
+                </div>
+                <label class="checkbox-row">
+                    <input type="checkbox" id="reg-consent">
+                    <span>Elolvastam és elfogadom az
+                        <a href="privacy.html" target="_blank">adatkezelési tájékoztatót</a></span>
+                </label>
+                <p id="reg-error" class="form-error hidden"></p>
+                <div class="input-group">
+                    <button id="reg-submit" class="btn btn-submit">Pont mentése</button>
+                    <button id="reg-skip" class="btn btn-ghost">Kihagyom</button>
+                </div>
             </div>
         </div>
     </div>
