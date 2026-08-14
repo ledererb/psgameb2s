@@ -25,7 +25,8 @@ iskolához/osztályhoz csatlakoznak, és a pontjaik versenybe számítanak.
 |---|---|
 | Játék (frontend) | kanonikus: **https://hello.peksnack.hu/jatek/** = a landing Vercel-projekt `/jatek` proxyja → **https://snackydash.vercel.app** (Vercel, GitHub `main` branch push-trigger) |
 | Landing | **https://hello.peksnack.hu** — statikus, `~/Desktop/Dev/peksnack-landing/` (NINCS git!), `vercel deploy --prod`; backup: `../peksnack-landing-backup-2026-08-14/` |
-| Privacy oldal | https://snackydash.vercel.app/privacy.html |
+| Privacy oldal | https://hello.peksnack.hu/jatek/privacy.html |
+| Játékszabályzat | https://hello.peksnack.hu/jatek/jatekszabalyzat.html |
 | Supabase projekt | ref: `dhfuqznsjetcgafwgkuq` — https://dhfuqznsjetcgafwgkuq.supabase.co |
 | GitHub repo | https://github.com/ledererb/psgameb2s (main = éles) |
 | Spec | `docs/superpowers/specs/2026-08-07-back-to-school-versenyplatform-design.md` |
@@ -126,10 +127,9 @@ Plauzibilitás (submit-score): `score ≤ 4000·(duration_s) + 5000`, duration 3
 ## 6. Nyitott feladatok (üzleti/launch — NEM kód)
 
 1. **Domain**: a `hello.peksnack.hu/jatek/` **ÉL** (2026-08-14, Vercel path-proxy + CORS-allowlist). Ha mégis külön végleges domain kell (pl. `jatek.peksnack.hu`) → Vercel-ben hozzárendelés + az `ALLOWED_ORIGINS` listához hozzáadás + 4 function redeploy.
-2. **privacy.html**: zárójeles helyőrzők (adatkezelő, dátumok, X nap) kitöltése + **jogi review** — LAUNCH-BLOKKOLÓ.
-3. **Játékszabályzat**: sorsolás menete (1 játékos = 1 sorsjegy vagy futamonként?), nyertes-értesítés claim-alapon (email NINCS tárolva — a nyertest becenévvel kell kihirdetni és jelentkeznie kell).
-4. **Kampányzáró admin-scriptek** (még nincsenek, ~20 perc): sorsolás-export (players ≥1 score) + kampányvégi tömeges adattörlés.
-5. **Token-higiénia**: `sbp_...` access token revoke a dashboardon, ha nem kell.
+2. **privacy.html + jatekszabalyzat.html**: **kitöltve TERVEZETként** (2026-08-14) — valós cégadatokkal (impresszum alapján), GDPR-jogalappal, adatfeldolgozókkal (Supabase eu-west-1, Vercel), kiskorú-kiegészítéssel. A reg-űrlap külön szabályzat-checkboxot kapott. **Jogi review továbbra is LAUNCH-BLOKKOLÓ**, és a doksik tetején lévő sárga „TERVEZET" doboz listázza a megerősítésre váró üzleti döntéseket: kampány dátumok (2026-09-01→30), sorsolás napja (2026-10-15), claim-határidő (30 nap), nyeremény-hozzárendelés (Dorko→egyéni, Feldobox→osztály, iskola→oklevél), „1 játékos = 1 sorsjegy", szervező-munkatársak kizárása. Jóváhagyáskor a két „TERVEZET"-dobozt törölni kell.
+3. **Kampányzáró admin-scriptek** (még nincsenek, ~20 perc): sorsolás-export (players ≥1 score) + kampányvégi tömeges adattörlés.
+4. **Token-higiénia**: `sbp_...` access token revoke a dashboardon, ha nem kell.
 
 ## 7. Ismert minor backlog (post-merge triage, egyik sem blokkoló)
 
