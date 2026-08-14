@@ -23,7 +23,8 @@ iskolához/osztályhoz csatlakoznak, és a pontjaik versenybe számítanak.
 
 | Mi | Hol |
 |---|---|
-| Játék (frontend) | **https://snackydash.vercel.app** (Vercel, GitHub `main` branch push-trigger) |
+| Játék (frontend) | kanonikus: **https://hello.peksnack.hu/jatek/** = a landing Vercel-projekt `/jatek` proxyja → **https://snackydash.vercel.app** (Vercel, GitHub `main` branch push-trigger) |
+| Landing | **https://hello.peksnack.hu** — statikus, `~/Desktop/Dev/peksnack-landing/` (NINCS git!), `vercel deploy --prod`; backup: `../peksnack-landing-backup-2026-08-14/` |
 | Privacy oldal | https://snackydash.vercel.app/privacy.html |
 | Supabase projekt | ref: `dhfuqznsjetcgafwgkuq` — https://dhfuqznsjetcgafwgkuq.supabase.co |
 | GitHub repo | https://github.com/ledererb/psgameb2s (main = éles) |
@@ -109,7 +110,7 @@ python3 -m http.server 8080   # repo gyökérben
 # Playwright MCP: http://localhost:8080 → __snacky.game.onGameOver(12345, {distance:800,maxCombo:3,nearMisses:1,bosses:0})
 ```
 `window.__snacky = { game, world, playerStore, api }` debug-handle.
-FIGYELEM: az `ALLOWED_ORIGIN=https://snackydash.vercel.app` miatt a localhostos oldalról az Edge Function hívások **CORS-hibát adnak** — lokális full-flow teszthez ideiglenesen: `~/bin/supabase secrets set ALLOWED_ORIGIN='*'` + redeploy, utána vissza!
+FIGYELEM: az Edge Functionök CORS-a az **ALLOWED_ORIGINS** allowlistből reflectel (jelenleg: `snackydash.vercel.app,hello.peksnack.hu`) — a localhostos oldalról a hívások **CORS-hibát adnak**. Lokális full-flow teszthez ideiglenesen: `~/bin/supabase secrets set ALLOWED_ORIGINS='*'` + redeploy, utána vissza az allowlistára! (A régi `ALLOWED_ORIGIN` secret csak fallback, ha az `ALLOWED_ORIGINS` nincs beállítva.)
 
 ## 5. Adatbázis-séma (rövid)
 
@@ -124,7 +125,7 @@ Plauzibilitás (submit-score): `score ≤ 4000·(duration_s) + 5000`, duration 3
 
 ## 6. Nyitott feladatok (üzleti/launch — NEM kód)
 
-1. **Domain**: végleges domain (pl. `jatek.peksnack.hu`) → Vercel-ben hozzárendelés + `supabase secrets set ALLOWED_ORIGIN=https://<új-domain>` + 4 function redeploy.
+1. **Domain**: a `hello.peksnack.hu/jatek/` **ÉL** (2026-08-14, Vercel path-proxy + CORS-allowlist). Ha mégis külön végleges domain kell (pl. `jatek.peksnack.hu`) → Vercel-ben hozzárendelés + az `ALLOWED_ORIGINS` listához hozzáadás + 4 function redeploy.
 2. **privacy.html**: zárójeles helyőrzők (adatkezelő, dátumok, X nap) kitöltése + **jogi review** — LAUNCH-BLOKKOLÓ.
 3. **Játékszabályzat**: sorsolás menete (1 játékos = 1 sorsjegy vagy futamonként?), nyertes-értesítés claim-alapon (email NINCS tárolva — a nyertest becenévvel kell kihirdetni és jelentkeznie kell).
 4. **Kampányzáró admin-scriptek** (még nincsenek, ~20 perc): sorsolás-export (players ≥1 score) + kampányvégi tömeges adattörlés.
@@ -139,12 +140,14 @@ Plauzibilitás (submit-score): `score ≤ 4000·(duration_s) + 5000`, duration 3
 - Register rate-limit 5/perc/IP: osztálynyi gyerek egy NAT-IP-n 429-be futhat — kampány előtt mérlegelni 10-15/perc emelést.
 - `update-affiliation`: `{school_id:null, new_class_name}` ellentmondásos kérés → 500 (DB CHECK védi; UI nem küld ilyet).
 - Osztályrang: fn iskolán belül számol, a view globális listát ad — UI mindig iskolára szűr, konzisztens UX.
+- `delete-my-data`-nak nincs UI-ja (az `api.js`-ben megvan a wrapper, de egyik képernyő sem hívja) — törlés jelenleg csak szerveroldalról (Edge Function hívás vagy SQL).
 
 ## 8. Ha valami nem működik
 
 | Tünet | Ok / megoldás |
 |---|---|
-| Frontend „Nem érhető el a szerver" | CORS: ALLOWED_ORIGIN nem egyezik az originnal → secrets set + redeploy |
+| Frontend „Nem érhető el a szerver" | CORS: az origin nincs az `ALLOWED_ORIGINS` allowlistban → `secrets set` (vesszőlista) + 4 function redeploy |
+| `/jatek/` (üres path) 404 a proxyn | A Vercel `/jatek/:path*` NEM matcha az üres path-ra — kell a külön `{ "source": "/jatek/", "destination": ".../" }` rewrite-sor (landing `vercel.json`) |
 | curl 401 a functionöknél | `verify_jwt` véletlenül bekapcsolva → redeploy `--no-verify-jwt`-tel |
 | 42501 a players/scores lekérésnél anon-kulccsal | SZÁNDÉKOS (RLS+REVOKE) — írás/olvasás csak Edge Functionből |
 | 429 regisztrációnál | IP rate-limit (isolate-memória) — várj 60 mp-et; tesztadat-növekedés OK |

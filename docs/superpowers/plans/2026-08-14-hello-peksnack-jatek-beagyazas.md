@@ -222,10 +222,15 @@ Expected: a backup `index.html` létezik.
     { "source": "/jatek", "destination": "/jatek/", "permanent": false }
   ],
   "rewrites": [
+    { "source": "/jatek/", "destination": "https://snackydash.vercel.app/" },
     { "source": "/jatek/:path*", "destination": "https://snackydash.vercel.app/:path*" }
   ]
 }
 ```
+
+(Megjegyzés az implementációból: a `/jatek/:path*` egyedül NEM elég — a Vercel
+path-to-regexpje az üres path-es `/jatek/`-t nem matchali, külön rewrite-sor kell
+neki. E nélkül a gyökér 404, a restek (`/jatek/js/main.js` stb.) működnek.)
 
 - [ ] **Step 3: Navbar-link beszúrása**
 

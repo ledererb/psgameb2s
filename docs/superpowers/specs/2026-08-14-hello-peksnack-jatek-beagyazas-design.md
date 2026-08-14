@@ -56,10 +56,13 @@ használ, az assetek relatívak). A játékmag továbbra is ÉRINTETLEN (HANDOFF
        { "source": "/jatek", "destination": "/jatek/", "permanent": false }
      ],
      "rewrites": [
+       { "source": "/jatek/", "destination": "https://snackydash.vercel.app/" },
        { "source": "/jatek/:path*", "destination": "https://snackydash.vercel.app/:path*" }
      ]
    }
    ```
+   (Implementációs korrektúra: a `/jatek/:path*` NEM matcha az üres path-ra —
+   a `/jatek/` csupasz gyökérhez külön rewrite-sor kell.)
    A redirect a Vercelen a rewrite ELŐTT fut → a perjel nélküli `/jatek` 307-tel
    `/jatek/`-re visz (a relatív assetek miatt a perjel kötelező).
 2. **Új szekció az `index.html`-ben** a `#nyeremenyjatekok` után: `id="snackydash"`,
