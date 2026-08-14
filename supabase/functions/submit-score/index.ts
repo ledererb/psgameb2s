@@ -5,12 +5,15 @@ const sb = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
 );
 
-const CORS = {
-  'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') ?? '*',
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? Deno.env.get('ALLOWED_ORIGIN') ?? '*')
+  .split(',').map((s) => s.trim());
+
+const corsHeaders = (origin: string | null) => ({
+  'Access-Control-Allow-Origin':
+    origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
   'Access-Control-Allow-Headers': 'content-type',
-};
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
+  'Vary': 'Origin',
+});
 
 // Konzervatív plauzibilitás (game.js: ~60 p/mp alap, de a kombó-szorzó és a
 // 2× pontszorzó együtt elit futamban 2000 p/mp fölé viheti — 4000 a biztonságos határ)
@@ -23,6 +26,9 @@ const RATE_LIMIT_MS = 10_000;      // 1 beküldés / 10 mp / játékos (isolate-
 const lastSubmit = new Map<string, number>();
 
 Deno.serve(async (req) => {
+  const CORS = corsHeaders(req.headers.get('origin'));
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 

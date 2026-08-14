@@ -5,12 +5,15 @@ const sb = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
 );
 
-const CORS = {
-  'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') ?? '*',
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? Deno.env.get('ALLOWED_ORIGIN') ?? '*')
+  .split(',').map((s) => s.trim());
+
+const corsHeaders = (origin: string | null) => ({
+  'Access-Control-Allow-Origin':
+    origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
   'Access-Control-Allow-Headers': 'content-type',
-};
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
+  'Vary': 'Origin',
+});
 
 // Tiltólista — kompakt, bővíthető (spec §5.1)
 const BLOCKLIST = [
@@ -32,6 +35,9 @@ const norm = (s: string) => s.trim().replace(/\s+/g, ' ');
 const SCHOOL_TYPES = ['altalanos', 'gimnazium', 'szakkozep', 'egyeb'];
 
 Deno.serve(async (req) => {
+  const CORS = corsHeaders(req.headers.get('origin'));
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
