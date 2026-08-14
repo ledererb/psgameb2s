@@ -1,5 +1,5 @@
 {
-  "buildCommand": "rm -rf dist && mkdir dist && cp -r index.html privacy.html css js assets icons manifest.json dist/",
+  "buildCommand": "rm -rf dist && mkdir dist && cp -r index.html privacy.html jatekszabalyzat.html css js assets icons manifest.json dist/",
   "outputDirectory": "dist",
   "headers": [
     {

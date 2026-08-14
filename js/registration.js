@@ -56,6 +56,7 @@ export function initRegistration({ mode: m = 'register', prefill = null, onRegis
             classNewInput: $('reg-class-new-input'),
             leaveBtn: $('reg-leave-school'),
             consent: $('reg-consent'),
+            rulesConsent: $('reg-rules-consent'),
             errorEl: $('reg-error'),
             submitBtn: $('reg-submit'),
             skipBtn: $('reg-skip'),
@@ -83,6 +84,8 @@ export function initRegistration({ mode: m = 'register', prefill = null, onRegis
     document.querySelectorAll('input[name="reg-age"]').forEach((r) => { r.checked = false; });
     els.consent.closest('.checkbox-row').style.display = '';
     els.consent.checked = false;
+    els.rulesConsent.closest('.checkbox-row').style.display = '';
+    els.rulesConsent.checked = false;
     els.errorEl.classList.add('hidden');
     els.submitBtn.textContent = 'Pont mentése';
     els.submitBtn.disabled = false;
@@ -114,6 +117,7 @@ export function initRegistration({ mode: m = 'register', prefill = null, onRegis
         }
         document.querySelector('.age-row').style.display = 'none';
         els.consent.closest('.checkbox-row').style.display = 'none';
+        els.rulesConsent.closest('.checkbox-row').style.display = 'none';
         els.submitBtn.textContent = 'Mentés';
     }
 
@@ -185,6 +189,7 @@ function bindListeners() {
         if (err) {
             els.errorEl.textContent = err === 'age_required' ? 'Válaszd ki a korcsoportot!'
                 : err === 'consent_required' ? 'A tájékoztató elfogadása kötelező.'
+                : err === 'rules_consent_required' ? 'A játékszabályzat elfogadása kötelező.'
                 : ERROR_TEXT[err];
             els.errorEl.classList.remove('hidden');
             return;
@@ -281,6 +286,7 @@ function valid() {
         if (els.nickInput.value.trim().length < 2) return 'nickname_length';
         if (!document.querySelector('input[name="reg-age"]:checked')) return 'age_required';
         if (!els.consent.checked) return 'consent_required';
+        if (!els.rulesConsent.checked) return 'rules_consent_required';
     }
     if (selectedSchool?.isNew) {
         if (els.newSchoolName.value.trim().length < 4) return 'school_invalid';
