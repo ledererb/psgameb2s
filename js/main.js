@@ -365,7 +365,7 @@ function buildSkinRow() {
     row.innerHTML = '';
     const { unlocked, selected } = playerStore.loadSkins();
 
-    const addBtn = (id, content, { locked = false, active = false, color = null, title = '' } = {}) => {
+    const addBtn = (id, content, { locked = false, active = false, color = null, title = '', skin = null } = {}) => {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'skin-btn' + (locked ? ' locked' : '') + (active ? ' active' : '');
@@ -373,7 +373,11 @@ function buildSkinRow() {
         b.title = title;
         b.textContent = content;
         b.addEventListener('click', () => {
-            if (locked) return;
+            if (locked) {
+                // zárolt póló is megnézhető a preview-ban (kiválasztani nem)
+                if (skin) skinPreview?.setSkin(shirtTextureFor(skin));
+                return;
+            }
             selectSkin(id);
             applySelectedSkin();
             buildSkinRow();
@@ -388,7 +392,8 @@ function buildSkinRow() {
             locked: !isOpen,
             active: selected === s.id,
             color: s.base,
-            title: isOpen ? s.name : `${s.name} — ${s.threshold.toLocaleString('hu-HU')} ponttól`,
+            skin: s,
+            title: isOpen ? s.name : `${s.name} — ${s.threshold.toLocaleString('hu-HU')} ponttól (kattints a megnézéséhez)`,
         });
     }
 }
