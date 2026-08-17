@@ -13,7 +13,7 @@ import {
 import { createSnackyModel, createShirtMesh } from './models.js';
 
 // Base pupil positions inside the head group (from createSnackyModel)
-const PUPIL_BASE = { x: 0.2, y: 0.12, z: -0.52 };
+const PUPIL_BASE = { x: 0.15, y: 0.08, z: -0.225 };
 
 export class Player {
     constructor() {
@@ -258,9 +258,6 @@ export class Player {
         const laneVel = LANES[this.lane] - this.worldX;
         m.rotation.z = -laneVel * 0.9;
         m.rotation.x = this.isSliding ? -0.9 : (this.isGroundPounding ? 0.4 : 0);
-
-        // Scarf flutter
-        this.parts.scarf.rotation.x = Math.sin(this.animTime * 1.7) * 0.4;
 
         // Pupil shift toward look target (clamped to ±0.03 world units)
         const lookX = Math.max(-0.03, Math.min(0.03, this.currentLookX * 0.01));

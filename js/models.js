@@ -93,83 +93,127 @@ export function createSnackyModel() {
     const orange = new THREE.MeshStandardMaterial({ color: 0xE8862E, roughness: 0.55 });
     const black  = new THREE.MeshStandardMaterial({ color: 0x1A1A1A, roughness: 0.5 });
     const white  = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.3 });
-    const red    = new THREE.MeshStandardMaterial({ color: 0xD63031, roughness: 0.7 });
+    const dark   = new THREE.MeshStandardMaterial({ color: 0x2A1A12, roughness: 0.6 });
+    const pink   = new THREE.MeshStandardMaterial({ color: 0xC0392B, roughness: 0.6 });
 
-    // Body (upright blob)
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 24, 18), orange);
-    body.scale.set(1, 1.15, 0.9);
-    body.position.y = 0.72;
+    // Body — tojásdad lathe-profil a hivatalos karakterlap alapján
+    const profile = [
+        [0.001, 0.42], [0.30, 0.44], [0.46, 0.52], [0.52, 0.68],
+        [0.52, 0.82], [0.47, 1.00], [0.38, 1.16], [0.26, 1.28],
+        [0.12, 1.36], [0.001, 1.40],
+    ].map(([x, y]) => new THREE.Vector2(x, y));
+    const body = new THREE.Mesh(new THREE.LatheGeometry(profile, 28), orange);
     body.castShadow = true;
     group.add(body);
 
-    // Head group holds face; runs toward -z, turned slightly so face is visible
+    // Fülek — kis dudorok a fejtetőn, kifelé billentve
+    for (const side of [-1, 1]) {
+        const ear = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.12, 4, 8), black);
+        ear.position.set(side * 0.17, 1.36, 0);
+        ear.rotation.z = -side * 0.55;
+        group.add(ear);
+    }
+
+    // Arc — a test -z oldalán; a group runs toward -z, a 0.55-ös fordítás
+    // miatt a futókamera felől is látszik
     const headGroup = new THREE.Group();
-    headGroup.position.y = 1.05;
-    headGroup.rotation.y = 0.55; // ~30° toward camera so the eyes are visible
+    headGroup.position.set(0, 1.05, -0.30);
+    headGroup.rotation.y = 0.55;
     group.add(headGroup);
 
-    // Ears
-    for (const side of [-1, 1]) {
-        const ear = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 10), black);
-        ear.scale.set(1, 1.5, 0.7);
-        ear.position.set(side * 0.28, 0.42, 0.05);
-        headGroup.add(ear);
-    }
-
-    // Eyes on the -z facing side of the head group
-    const pupilL = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), black);
+    // Szemek: nagy fehér gömbök + mozgó pupilla (fényfolt a pupilla gyermeke)
+    const pupilL = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 10), black);
     const pupilR = pupilL.clone();
     for (const [side, pupil] of [[-1, pupilL], [1, pupilR]]) {
-        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), white);
-        eye.position.set(side * 0.2, 0.12, -0.42);
-        pupil.position.set(side * 0.2, 0.12, -0.52);
-        headGroup.add(eye, pupil);
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), white);
+        eye.scale.set(1, 1.1, 0.55);
+        eye.position.set(side * 0.15, 0.08, -0.14);
+        pupil.position.set(side * 0.15, 0.08, -0.225);
+        const shine = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), white);
+        shine.position.set(0.025, 0.03, -0.05);
+        pupil.add(shine);
+        const brow = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.028, 0.03), black);
+        brow.position.set(side * 0.16, 0.25, -0.155);
+        brow.rotation.z = side * 0.18;
+        headGroup.add(eye, pupil, brow);
     }
 
-    // Arms & legs (black capsules) — pivots at shoulder/hip
-    const limbGeo = new THREE.CapsuleGeometry(0.07, 0.3, 4, 8);
-    const armL = new THREE.Mesh(limbGeo, black);
-    const armR = new THREE.Mesh(limbGeo, black);
-    armL.position.set(-0.58, 0.85, 0);
-    armR.position.set(0.58, 0.85, 0);
-    const legL = new THREE.Mesh(limbGeo, black);
-    const legR = new THREE.Mesh(limbGeo, black);
-    legL.position.set(-0.22, 0.2, 0);
-    legR.position.set(0.22, 0.2, 0);
-    group.add(armL, armR, legL, legR);
+    // Orr + vigyor (sötét szájüreg, fogsor, nyelv)
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 10), black);
+    nose.scale.set(1.3, 0.85, 0.6);
+    nose.position.set(0, -0.03, -0.20);
+    headGroup.add(nose);
+    const mouth = new THREE.Mesh(new THREE.SphereGeometry(0.115, 16, 12), dark);
+    mouth.scale.set(1.55, 0.95, 0.45);
+    mouth.position.set(0, -0.17, -0.155);
+    headGroup.add(mouth);
+    const teeth = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.055, 0.03), white);
+    teeth.position.set(0, -0.125, -0.20);
+    headGroup.add(teeth);
+    const tongue = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), pink);
+    tongue.scale.set(1.5, 0.7, 0.5);
+    tongue.position.set(0, -0.205, -0.185);
+    headGroup.add(tongue);
 
-    // Scarf (red band + trailing tail toward +z)
-    const band = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.09, 8, 16), red);
-    band.rotation.x = Math.PI / 2;
-    band.position.y = 1.12;
-    const scarf = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.06, 0.55), red);
-    scarf.position.set(0.25, 1.08, 0.42);
-    group.add(band, scarf);
+    // Karok — hosszú spagetti + ököl; a pivot a VÁLLON van (a run-cycle így
+    // onnan lengteti), a player.js csak rotation.x-et állít
+    const armGeo = new THREE.CapsuleGeometry(0.05, 0.38, 4, 8);
+    const mkArm = (side) => {
+        const pivot = new THREE.Group();
+        pivot.position.set(side * 0.50, 1.05, 0);
+        pivot.rotation.z = -side * 0.16; // enyhén kifelé, a pólóhéjon kívül lógjon
+        const arm = new THREE.Mesh(armGeo, black);
+        arm.position.y = -0.23;
+        const fist = new THREE.Mesh(new THREE.SphereGeometry(0.085, 10, 8), black);
+        fist.position.y = -0.49;
+        pivot.add(arm, fist);
+        return pivot;
+    };
+    const armL = mkArm(-1);
+    const armR = mkArm(1);
+    group.add(armL, armR);
 
-    return { group, parts: { body, headGroup, armL, armR, legL, legR, scarf, pupilL, pupilR } };
+    // Lábak — hosszú vékony + lapos cipő; pivot a csípőn
+    const legGeo = new THREE.CapsuleGeometry(0.055, 0.30, 4, 8);
+    const mkLeg = (side) => {
+        const pivot = new THREE.Group();
+        pivot.position.set(side * 0.18, 0.50, 0);
+        const leg = new THREE.Mesh(legGeo, black);
+        leg.position.y = -0.19;
+        const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.11, 0.38), black);
+        shoe.position.set(0, -0.435, -0.06);
+        pivot.add(leg, shoe);
+        return pivot;
+    };
+    const legL = mkLeg(-1);
+    const legR = mkLeg(1);
+    group.add(legL, legR);
+
+    return { group, parts: { body, headGroup, armL, armR, legL, legR, pupilL, pupilR } };
 }
 
 /**
- * Póló-héj a Snacky body fölé: részleges gömbhéj (mellkas→derék) + két ujj
- * a karok tövénél. A body transzformjait (scale/pozíció) másolja, és mivel a
- * group része, a squash/stretch animációk automatikusan viszik.
- * A textúra a skins.js makeShirtTexture()-ből jön (elöl/hátul print).
+ * Póló-héj a Snacky body fölé: a test lathe-profiljának torzó-szelete
+ * (+0,03 ráhagyás) + két ujj a karok tövénél. phiStart=-π/2, hogy az UV
+ * a gömb-konvencióval egyezzen (hát: u≈0.25, elöl: u≈0.75) — így a
+ * assets/skins/*.png textúrák változatlanul jók. A group részeként a
+ * squash/stretch animációk automatikusan viszik.
  */
 export function createShirtMesh(texture) {
     const group = new THREE.Group();
     const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.8 });
 
+    const shirtProfile = [
+        [0.48, 0.45], [0.545, 0.58], [0.555, 0.72], [0.535, 0.84], [0.50, 0.90],
+    ].map(([x, y]) => new THREE.Vector2(x, y));
     const shell = new THREE.Mesh(
-        new THREE.SphereGeometry(0.575, 24, 12, 0, Math.PI * 2, 1.0, 1.25),
-        mat);
-    shell.scale.set(1, 1.15, 0.9);
-    shell.position.y = 0.72;
+        new THREE.LatheGeometry(shirtProfile, 28, -Math.PI / 2, Math.PI * 2), mat);
     group.add(shell);
 
     for (const side of [-1, 1]) {
-        const sleeve = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 8), mat);
+        const sleeve = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 8), mat);
         sleeve.scale.set(1, 0.9, 0.9);
-        sleeve.position.set(side * 0.56, 0.92, 0);
+        sleeve.position.set(side * 0.47, 0.97, 0);
         group.add(sleeve);
     }
     return group;

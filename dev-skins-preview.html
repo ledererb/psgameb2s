@@ -24,31 +24,35 @@
 
         const grid = document.getElementById('grid');
         const renders = [];
-        for (const skin of [{ id: null, short: 'ALAP', threshold: 0 }, ...SKINS]) {
+        const mkView = (model, back) => {
             const canvas = document.createElement('canvas');
             canvas.width = 190; canvas.height = 190;
-            const fig = document.createElement('figure');
-            const cap = document.createElement('figcaption');
-            cap.textContent = skin.id ? `${skin.short} (${skin.threshold})` : skin.short;
-            fig.append(canvas, cap);
-            grid.appendChild(fig);
-
             const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
             renderer.setSize(190, 190, false);
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 20);
-            camera.position.set(0, 1.05, -3.4);
+            camera.position.set(0, 1.05, back ? 3.4 : -3.4); // -z = szemből, +z = hátulról
             camera.lookAt(0, 0.78, 0);
             scene.add(new THREE.HemisphereLight(0xFFFFFF, 0x2A2A3A, 1.15));
             const key = new THREE.DirectionalLight(0xFFFFFF, 1.3);
-            key.position.set(-2, 3, -3);
+            key.position.set(back ? 2 : -2, 3, back ? 3 : -3);
             scene.add(key);
-
-            const model = createSnackyModel();
-            model.parts.headGroup.rotation.y = 0; // egyenesen előre
-            if (skin.id) model.group.add(createShirtMesh(makeShirtTexture(skin)));
             scene.add(model.group);
             renders.push(() => renderer.render(scene, camera));
+            return canvas;
+        };
+        for (const skin of [{ id: null, short: 'ALAP', threshold: 0 }, ...SKINS]) {
+            const fig = document.createElement('figure');
+            const cap = document.createElement('figcaption');
+            cap.textContent = skin.id ? `${skin.short} (${skin.threshold})` : skin.short;
+            for (const back of [false, true]) {
+                const model = createSnackyModel();
+                if (!back) model.parts.headGroup.rotation.y = 0; // front: egyenesen a kamerába
+                if (skin.id) model.group.add(createShirtMesh(makeShirtTexture(skin)));
+                fig.appendChild(mkView(model, back));
+            }
+            fig.appendChild(cap);
+            grid.appendChild(fig);
         }
         // a textúrák aszinkron töltenek — rendereljük újra, amíg be nem jönnek
         const renderAll = () => renders.forEach((r) => r());
