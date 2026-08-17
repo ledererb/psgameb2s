@@ -49,7 +49,11 @@ Böngésző (statikus, Vercel/dist)
   js/player-store.js — localStorage: profil, outbox, best, lb-cache
   js/registration.js — reg/edit űrlap (game over + badge „módosítás")
   js/leaderboard.js  — LeaderboardUI (3 tab + cache + esc())
-  js/main.js         — flow: auto-submit, outbox-flush, badge
+  js/main.js         — flow: auto-submit, outbox-flush, badge, skin-vezérlés
+  js/skins.js        — Dorko-póló skinek (küszöbök, unlock, textúra-töltés)
+  js/skin-preview.js — menü-ruhatára 3D preview (front-nézet, önálló renderer)
+  assets/skins/      — a 6 póló textúrája (valódi DRK x VATES hátprint-kivágatok,
+                       blendelve; a forrásfotók lokálisan: ../dorko-ref/)
   index.html, privacy.html
         │ olvasás: PostgREST view-k + rpc (publishable kulcs)
         │ írás:    Edge Functions (secret-validált)
@@ -111,6 +115,8 @@ python3 -m http.server 8080   # repo gyökérben
 # Playwright MCP: http://localhost:8080 → __snacky.game.onGameOver(12345, {distance:800,maxCombo:3,nearMisses:1,bosses:0})
 ```
 `window.__snacky = { game, world, playerStore, api }` debug-handle.
+Póló-textúrák gyors ellenőrzése (mind a 6, front-nézet): `http://localhost:8080/dev-skins-preview.html`
+(a fájl NINCS a dist-whitelistben, nem deployolódik).
 FIGYELEM: az Edge Functionök CORS-a az **ALLOWED_ORIGINS** allowlistből reflectel (jelenleg: `snackydash.vercel.app,hello.peksnack.hu`) — a localhostos oldalról a hívások **CORS-hibát adnak**. Lokális full-flow teszthez ideiglenesen: `~/bin/supabase secrets set ALLOWED_ORIGINS='*'` + redeploy, utána vissza az allowlistára! (A régi `ALLOWED_ORIGIN` secret csak fallback, ha az `ALLOWED_ORIGINS` nincs beállítva.)
 
 ## 5. Adatbázis-séma (rövid)

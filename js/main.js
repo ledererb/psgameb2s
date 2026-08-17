@@ -14,6 +14,8 @@ import { initRegistration } from './registration.js';
 import { LeaderboardUI } from './leaderboard.js';
 import { SceneManager } from './scene.js';
 import { World3D } from './world.js';
+import { SKINS, getSelectedSkin, selectSkin, unlockByScore, makeShirtTexture } from './skins.js';
+import { SkinPreview } from './skin-preview.js';
 
 // crypto.randomUUID régebbi böngészőkben nem létezik — RFC4122 v4 fallback
 function newRunId() {
@@ -43,6 +45,8 @@ let slideKeyDown = false;
 let runStartTime = 0;         // futamidő-mérés (submit-score duration_ms)
 let pendingScore = null;      // beküldésre váró futam
 let submitTimer = null;       // visszatérő játékos auto-submit késleltetése
+let skinPreview = null;       // ruhatára 3D preview (menü)
+const shirtTextures = {};     // skin.id → CanvasTexture cache
 let leaderboardGameover, leaderboardOverlay; // LeaderboardUI példányok
 
 // Touch tracking for swipe detection
@@ -130,11 +134,16 @@ function init() {
             client_run_id: newRunId(),
         };
         showGameOverScreen(score, stats);
+        const newlyUnlocked = unlockByScore(pendingScore.score);
+        if (newlyUnlocked.length) showSkinUnlockBanner(newlyUnlocked);
         handlePostGame();
     };
 
     // Show high score on menu
     updateHighScore();
+
+    // Dorko-póló skinek: visszamenőleges feloldás + selector + preview
+    initSkins();
 
     // ── Event Listeners ──
 
@@ -306,6 +315,8 @@ function startGame() {
     state = 'playing';
     menuScreen.classList.add('hidden');
     gameOverScreen.classList.add('hidden');
+    document.getElementById('skin-unlock-banner').classList.add('hidden');
+    skinPreview?.setActive(false);
 
     // Reset input states
     slideKeyDown = false;
@@ -333,6 +344,68 @@ function showGameOverScreen(score, stats) {
     gameOverScreen.querySelectorAll('.lb-tab').forEach((b) =>
         b.classList.toggle('active', b.dataset.tab === 'individual'));
     leaderboardGameover.show('individual');
+}
+
+// ── Dorko-póló skinek (kozmetika; spec: 2026-08-14-dorko-polo-skinek-design.md) ──
+
+function shirtTextureFor(skin) {
+    if (!shirtTextures[skin.id]) shirtTextures[skin.id] = makeShirtTexture(skin);
+    return shirtTextures[skin.id];
+}
+
+function applySelectedSkin() {
+    const skin = getSelectedSkin();
+    const texture = skin ? shirtTextureFor(skin) : null;
+    game.player.setSkin(texture);
+    skinPreview?.setSkin(texture);
+}
+
+function buildSkinRow() {
+    const row = document.getElementById('skin-row');
+    row.innerHTML = '';
+    const { unlocked, selected } = playerStore.loadSkins();
+
+    const addBtn = (id, content, { locked = false, active = false, color = null, title = '' } = {}) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'skin-btn' + (locked ? ' locked' : '') + (active ? ' active' : '');
+        if (color) b.style.setProperty('--skin-color', color);
+        b.title = title;
+        b.textContent = content;
+        b.addEventListener('click', () => {
+            if (locked) return;
+            selectSkin(id);
+            applySelectedSkin();
+            buildSkinRow();
+        });
+        row.appendChild(b);
+    };
+
+    addBtn(null, '🌭', { title: 'Alap Snacky (póló nélkül)', active: !selected });
+    for (const s of SKINS) {
+        const isOpen = unlocked.includes(s.id);
+        addBtn(s.id, isOpen ? s.short : `🔒 ${s.threshold.toLocaleString('hu-HU')}`, {
+            locked: !isOpen,
+            active: selected === s.id,
+            color: s.base,
+            title: isOpen ? s.name : `${s.name} — ${s.threshold.toLocaleString('hu-HU')} ponttól`,
+        });
+    }
+}
+
+function showSkinUnlockBanner(newly) {
+    const banner = document.getElementById('skin-unlock-banner');
+    banner.innerHTML = `🎉 ÚJ PÓLÓ FELOLDVA: <strong>${esc(newly.map((s) => s.short).join(', '))}</strong>`
+        + '<br><span class="skin-unlock-sub">A menüben, Snacky ruhatárában tudod felvenni!</span>';
+    banner.classList.remove('hidden');
+    buildSkinRow();
+}
+
+function initSkins() {
+    unlockByScore(playerStore.getBest()); // visszamenőleges, csendes feloldás a legjobb alapján
+    skinPreview = new SkinPreview(document.getElementById('skin-preview'));
+    applySelectedSkin();
+    buildSkinRow();
 }
 
 function handlePostGame() {

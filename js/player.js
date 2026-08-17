@@ -10,7 +10,7 @@ import {
     PLAYER_X, INVINCIBILITY_DURATION, INITIAL_LIVES, MAX_LIVES,
     LANES, worldHeightY
 } from './utils.js';
-import { createSnackyModel } from './models.js';
+import { createSnackyModel, createShirtMesh } from './models.js';
 
 // Base pupil positions inside the head group (from createSnackyModel)
 const PUPIL_BASE = { x: 0.2, y: 0.12, z: -0.52 };
@@ -46,6 +46,7 @@ export class Player {
         this.mesh = model.group;
         this.parts = model.parts;
         this.animTime = 0;
+        this.shirt = null; // Dorko-póló héj (kozmetika, skins.js)
 
         // Visual effects
         this.squash = 1;
@@ -69,6 +70,19 @@ export class Player {
 
     get isInvincible() {
         return this.invincibleTimer > 0;
+    }
+
+    /** Póló-skin felvétele/levétele (kozmetika; null = alap Snacky). */
+    setSkin(texture) {
+        if (this.shirt) {
+            this.mesh.remove(this.shirt);
+            this.shirt.traverse((o) => { if (o.isMesh) o.geometry.dispose(); });
+            this.shirt = null;
+        }
+        if (texture) {
+            this.shirt = createShirtMesh(texture);
+            this.mesh.add(this.shirt);
+        }
     }
 
     // ── Lane system ──

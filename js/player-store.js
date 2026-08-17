@@ -8,6 +8,7 @@ const KEY = 'snacky_player';
 const OUTBOX = 'snacky_outbox';
 const BEST = 'snacky_personal_best';
 const LB_CACHE = 'snacky_lb_cache';
+const SKINS = 'snacky_skins';
 
 function readJson(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
@@ -45,4 +46,10 @@ export const playerStore = {
         try { localStorage.setItem(LB_CACHE, JSON.stringify(cache)); } catch { /* túlcsordulás: nem kritikus */ }
     },
     readLbCache: (tab) => readJson(LB_CACHE, {})[tab] ?? null,
+
+    // ── Skinek (kozmetika, kliensoldali) ──
+    loadSkins: () => ({ unlocked: [], selected: null, ...readJson(SKINS, {}) }),
+    saveSkins(state) {
+        try { localStorage.setItem(SKINS, JSON.stringify(state)); } catch { /* nem kritikus */ }
+    },
 };

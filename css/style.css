@@ -629,3 +629,90 @@ kbd {
 .lb-note { font-size: 12px; opacity: .7; margin: 4px 0 8px; }
 .lb-own td { color: #ffd23f; font-weight: 700; }
 .lb-cache-note { font-size: 11px; opacity: .6; }
+
+/* ── Dorko-póló skinek: ruhatára (menü) + feloldás-banner ── */
+
+#skin-section {
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.skin-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #95A5A6;
+    margin-bottom: 4px;
+}
+
+#skin-preview {
+    display: block;
+    margin: 0 auto;
+    width: 170px;
+    height: 170px;
+}
+
+#skin-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    max-width: 420px;
+    margin: 0 auto;
+}
+
+.skin-btn {
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    background: var(--skin-color, rgba(255, 255, 255, 0.06));
+    color: #ECF0F1;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+    transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.skin-btn:not(.locked):hover {
+    transform: translateY(-2px);
+    border-color: #F1C40F;
+}
+
+.skin-btn.locked {
+    opacity: 0.55;
+    cursor: default;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.skin-btn.active {
+    border-color: #F1C40F;
+    box-shadow: 0 0 0 3px rgba(241, 196, 15, 0.25);
+}
+
+.skin-unlock-banner {
+    margin: 14px auto 4px;
+    padding: 12px 18px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(241, 196, 15, 0.22), rgba(230, 126, 34, 0.22));
+    border: 1px solid rgba(241, 196, 15, 0.6);
+    color: #F8E8C8;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    animation: skin-pop 0.5s ease;
+}
+
+.skin-unlock-sub {
+    font-size: 0.78rem;
+    color: #C8B89A;
+}
+
+@keyframes skin-pop {
+    0% { transform: scale(0.7); opacity: 0; }
+    60% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+}

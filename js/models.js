@@ -149,6 +149,32 @@ export function createSnackyModel() {
     return { group, parts: { body, headGroup, armL, armR, legL, legR, scarf, pupilL, pupilR } };
 }
 
+/**
+ * Póló-héj a Snacky body fölé: részleges gömbhéj (mellkas→derék) + két ujj
+ * a karok tövénél. A body transzformjait (scale/pozíció) másolja, és mivel a
+ * group része, a squash/stretch animációk automatikusan viszik.
+ * A textúra a skins.js makeShirtTexture()-ből jön (elöl/hátul print).
+ */
+export function createShirtMesh(texture) {
+    const group = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.8 });
+
+    const shell = new THREE.Mesh(
+        new THREE.SphereGeometry(0.575, 24, 12, 0, Math.PI * 2, 1.0, 1.25),
+        mat);
+    shell.scale.set(1, 1.15, 0.9);
+    shell.position.y = 0.72;
+    group.add(shell);
+
+    for (const side of [-1, 1]) {
+        const sleeve = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 8), mat);
+        sleeve.scale.set(1, 0.9, 0.9);
+        sleeve.position.set(side * 0.56, 0.92, 0);
+        group.add(sleeve);
+    }
+    return group;
+}
+
 export function createCollectibleMesh(type) {
     const g = new THREE.Group();
     if (type === 'hotdog' || type === 'golden_hotdog') {
