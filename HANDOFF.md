@@ -14,8 +14,8 @@ iskolához/osztályhoz csatlakoznak, és a pontjaik versenybe számítanak.
 
 **Versenymodell (D2 döntés — NE változtasd meg egyeztetés nélkül):**
 - 🧑 **Egyéni:** kampány végén **sorsolás** a résztvevők között — a ranglista csak megjelenítés (top 100, játékosonkénti legjobb)
-- 👥 **Osztály:** tagok (csapatjelölt) legjobbjainak **ÖSSZEGE**, iskolán belüli verseny, küszöb nélkül
-- 🏫 **Iskola:** tagok csapatjelölt legjobbjainak **ÁTLAGA**, min. **5 játékos** küszöb; legmagasabb átlag nyer
+- 👥 **Osztály:** tagok csapatjelölt legjobbjai közül az **5 legjobb ÁTLAGA**, iskolán belüli verseny, **min. 5 tag** küszöb (2026-08-18-i D2-módosítás: korábban ÖSSZEG volt — létszám- és multireg-manipulálható)
+- 🏫 **Iskola:** tagok csapatjelölt legjobbjai közül az **5 legjobb ÁTLAGA**, min. **5 játékos** küszöb; legmagasabb átlag nyer
 - Beküldéskor checkbox (`counts_for_team`): a pont számítson-e a csapatnak (alapból bepipálva)
 - Iskola/osztály-tagozódás **nem kötelező** (felnőttek is játszhatnak)
 
@@ -125,7 +125,7 @@ FIGYELEM: az Edge Functionök CORS-a az **ALLOWED_ORIGINS** allowlistből reflec
 - `classes`: (school_id, name) unique.
 - `players`: uuid, nickname, school_id/class_id NULLABLE, secret uuid („jelszó"), consent_at, consent_is_parent.
 - `scores`: player_id (cascade), score, distance_m, duration_ms, counts_for_team, client_run_id (parciális unique — idempotencia).
-- `fn_player_stats(uuid)` → `{rank_individual, best_score, school:{rank,avg,players,below_threshold}|null, class:{rank,total,players}|null}`.
+- `fn_player_stats(uuid)` → `{rank_individual, best_score, school:{rank,avg,players,below_threshold}|null, class:{rank,avg,players,below_threshold}|null}` (a class is avg + threshold, top-5 modell).
 
 Plauzibilitás (submit-score): `score ≤ 4000·(duration_s) + 5000`, duration 3 s–1 óra,
 1 beküldés/10 mp/játékos (isolate-memória, best-effort), register 5/perc/IP (szintén isolate).

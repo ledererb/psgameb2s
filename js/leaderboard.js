@@ -1,7 +1,7 @@
 // ============================================
 // Snacky Dash B2S — Ranglista UI (spec §6.5)
-// 3 tab: Egyéni (sorsolás!) | Iskolák (átlag) |
-// Osztályok (összeg, iskolán belül).
+// 3 tab: Egyéni (sorsolás!) | Iskolák (top-5 átlag) |
+// Osztályok (top-5 átlag, iskolán belül).
 // Szerverről + localStorage cache-fallback.
 // ============================================
 
@@ -67,7 +67,7 @@ export class LeaderboardUI {
                     <td class="lb-score">${fmt(r.best_score)}</td></tr>`;
             });
         } else if (this.tab === 'schools') {
-            note = 'Az iskolák a játékosaik legjobb eredményeinek <strong>átlagával</strong> versenyeznek (min. 5 játékos).';
+            note = 'Az iskolák az <strong>5 legjobb játékosuk</strong> átlagával versenyeznek (min. 5 játékos kell).';
             html += '<th>#</th><th>Iskola</th><th>Átlagpont</th><th>Játékos</th></tr></thead><tbody>';
             data.forEach((r, i) => {
                 html += `<tr class="${i < 3 ? 'lb-top3' : ''} ${r.school_id === me?.school?.id ? 'lb-own' : ''}">
@@ -78,14 +78,14 @@ export class LeaderboardUI {
             });
         } else {
             note = this.classSchoolId
-                ? 'Az osztályok a tagjaik legjobbjainak <strong>összegével</strong> versenyeznek.'
+                ? 'Az osztályok az <strong>5 legjobb tagjuk</strong> átlagával versenyeznek (min. 5 tag kell).'
                 : 'Válassz iskolát a game over képernyőn, hogy lásd az osztályait!';
-            html += '<th>#</th><th>Osztály</th><th>Összpont</th><th>Tag</th></tr></thead><tbody>';
+            html += '<th>#</th><th>Osztály</th><th>Top-5 átlag</th><th>Tag</th></tr></thead><tbody>';
             data.forEach((r, i) => {
                 html += `<tr class="${i < 3 ? 'lb-top3' : ''} ${r.class_id === me?.class?.id ? 'lb-own' : ''}">
                     <td class="lb-rank">${MEDALS[i] ?? i + 1}</td>
                     <td>${esc(r.name)}</td>
-                    <td class="lb-score">${fmt(r.total_score)}</td>
+                    <td class="lb-score">${fmt(r.avg_score)}</td>
                     <td>${r.player_count}</td></tr>`;
             });
         }
