@@ -31,7 +31,7 @@ function rateLimit(key: string, max: number, windowMs: number): boolean {
   e.n++; return true;
 }
 
-const norm = (s: string) => s.trim().replace(/\s+/g, ' ');
+const norm = (s: string) => s.trim().replace(/\s+/g, ' ').normalize('NFC');
 const SCHOOL_TYPES = ['altalanos', 'gimnazium', 'szakkozep', 'egyeb'];
 
 Deno.serve(async (req) => {

@@ -13,7 +13,7 @@ const corsHeaders = (origin: string | null) => ({
   'Access-Control-Allow-Headers': 'content-type',
   'Vary': 'Origin',
 });
-const norm = (s: string) => s.trim().replace(/\s+/g, ' ');
+const norm = (s: string) => s.trim().replace(/\s+/g, ' ').normalize('NFC');
 const SCHOOL_TYPES = ['altalanos', 'gimnazium', 'szakkozep', 'egyeb'];
 
 Deno.serve(async (req) => {
