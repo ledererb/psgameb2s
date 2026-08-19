@@ -16,6 +16,7 @@ import { SceneManager } from './scene.js';
 import { World3D } from './world.js';
 import { SKINS, getSelectedSkin, selectSkin, unlockByScore, makeShirtTexture } from './skins.js';
 import { SkinPreview } from './skin-preview.js';
+import { initInstallHint } from './install-hint.js';
 
 // crypto.randomUUID régebbi böngészőkben nem létezik — RFC4122 v4 fallback
 function newRunId() {
@@ -144,6 +145,12 @@ function init() {
 
     // Dorko-póló skinek: visszamenőleges feloldás + selector + preview
     initSkins();
+
+    // PWA: telepítési hint + service worker (telepíthetőség/offline shell)
+    initInstallHint(document.getElementById('start-btn'));
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(() => { /* SW opcionális */ });
+    }
 
     // ── Event Listeners ──
 
