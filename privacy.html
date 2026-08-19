@@ -3,6 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FK8WHSQEV5"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FK8WHSQEV5');
+  </script>
+
     <title>Adatkezelési tájékoztató — Snacky Dash</title>
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -25,8 +34,9 @@
 
         <div class="legal-review">
             ⚠️ <strong>TERVEZET</strong> — jogi felülvizsgálatra vár. Megerősítésre váró
-            munkafeltételezés: a kampány záródátuma (2026. október 2., a kampányoldali
-            mockup szerint) és a claim-határidő (30 nap).
+            munkafeltételezések: a kampány záródátuma (2026. október 2., a kampányoldali
+            mockup szerint), a claim-határidő (30 nap), és a Google Analytics mérés
+            elfogadása (§5–6 — ha a jogász cookie-bannert/Consent Mode-ot kér, az külön fejlesztés).
         </div>
 
         <h2>1. Adatkezelő</h2>
@@ -66,14 +76,21 @@
                 találhatók.</li>
             <li><strong>Vercel Inc.</strong> — a weboldal kiszolgálása (hosting); a tartalom
                 a Vercel hálózatán keresztül jut el a böngésződbe.</li>
+            <li><strong>Google LLC (Google Analytics)</strong> — anonimizált látogatottsági
+                mérés (GA4); a játékbeli adataidat nem kapja meg.</li>
         </ul>
-        <p>Az adatokat másnak nem adjuk át, és harmadik országba szándékosan nem továbbítjuk.</p>
+        <p>Az adatokat másnak nem adjuk át, és harmadik országba szándékosan nem továbbítjuk
+            (a Google Analytics esetén az EU–US Data Privacy Framework keretei szerint).</p>
 
-        <h2>6. Sütik és helyi tárhely</h2>
-        <p>A játék <strong>nem használ sütiket</strong> és hirdetési követőket. A böngésződ
+        <h2>6. Sütik, helyi tárhely és mérés</h2>
+        <p>A játék <strong>nem használ hirdetési követőket</strong>. A böngésződ
             helyi tárhelyében (localStorage) kizárólag a regisztrációd technikai
             azonosítóját tároljuk, hogy újraindításkor is felismerjünk — ez a játék
             működéséhez szükséges, és a regisztráció törlésével együtt törlődik.</p>
+        <p>Az oldalon <strong>Google Analytics</strong> mérőkód működik (GA4), amely
+            összesített látogatottsági statisztikát készít (pl. oldalmegtekintések);
+            ehhez a Google analytics-sütiket használhat. A mérés nem kapcsolódik a
+            játékbeli regisztrációdhoz.</p>
 
         <h2>7. 16 év alattiak</h2>
         <p>Ha 16 év alatti vagy, a regisztrációhoz szülő/törvényes képviselő
