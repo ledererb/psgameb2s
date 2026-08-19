@@ -35,8 +35,9 @@
         <div class="legal-review">
             ⚠️ <strong>TERVEZET</strong> — jogi felülvizsgálatra vár. Megerősítésre váró
             munkafeltételezések: a kampány záródátuma (2026. október 2., a kampányoldali
-            mockup szerint), a claim-határidő (30 nap), és a Google Analytics mérés
-            elfogadása (§5–6 — ha a jogász cookie-bannert/Consent Mode-ot kér, az külön fejlesztés).
+            mockup szerint), a claim-határidő (30 nap), és a mérőpixelek (GA4 + Meta Pixel,
+            §5–6) elfogadása — remarketing-célú követésnél a jogász dönthet úgy, hogy
+            cookie-banner / Consent Mode kell, az külön fejlesztés.
         </div>
 
         <h2>1. Adatkezelő</h2>
@@ -78,19 +79,22 @@
                 a Vercel hálózatán keresztül jut el a böngésződbe.</li>
             <li><strong>Google LLC (Google Analytics)</strong> — anonimizált látogatottsági
                 mérés (GA4); a játékbeli adataidat nem kapja meg.</li>
+            <li><strong>Meta Platforms Ireland Ltd. (Meta Pixel)</strong> — a kampány
+                hirdetéseinek mérése és a látogatókra irányuló remarketing-hirdetések
+                célzása; a játékbeli adataidat nem kapja meg.</li>
         </ul>
         <p>Az adatokat másnak nem adjuk át, és harmadik országba szándékosan nem továbbítjuk
-            (a Google Analytics esetén az EU–US Data Privacy Framework keretei szerint).</p>
+            (a Google és a Meta esetén az EU–US Data Privacy Framework keretei szerint).</p>
 
         <h2>6. Sütik, helyi tárhely és mérés</h2>
-        <p>A játék <strong>nem használ hirdetési követőket</strong>. A böngésződ
-            helyi tárhelyében (localStorage) kizárólag a regisztrációd technikai
+        <p>A böngésződ helyi tárhelyében (localStorage) kizárólag a regisztrációd technikai
             azonosítóját tároljuk, hogy újraindításkor is felismerjünk — ez a játék
             működéséhez szükséges, és a regisztráció törlésével együtt törlődik.</p>
-        <p>Az oldalon <strong>Google Analytics</strong> mérőkód működik (GA4), amely
-            összesített látogatottsági statisztikát készít (pl. oldalmegtekintések);
-            ehhez a Google analytics-sütiket használhat. A mérés nem kapcsolódik a
-            játékbeli regisztrációdhoz.</p>
+        <p>Az oldalon mérőpixelek működnek: <strong>Google Analytics</strong> (GA4, összesített
+            látogatottsági statisztika) és <strong>Meta Pixel</strong> (a kampány hirdetéseinek
+            hatékonyságmérése és remarketing-célzás). Ehhez a szolgáltatók sütiket használhatnak.
+            A mérés nem kapcsolódik a játékbeli regisztrációd adataihoz, csak az oldal
+            használatához (pl. melyik oldal töltődött be, történt-e regisztráció).</p>
 
         <h2>7. 16 év alattiak</h2>
         <p>Ha 16 év alatti vagy, a regisztrációhoz szülő/törvényes képviselő

@@ -207,6 +207,10 @@ function bindListeners() {
                 player = { ...cur, school: res.school, class: res.class };
             }
             playerStore.save(player);
+            // Meta Pixel: csak az ÚJ regisztráció konverzió (edit mód profilfrissítés, nem számít)
+            if (mode === 'register' && typeof fbq === 'function') {
+                fbq('track', 'CompleteRegistration', { content_name: 'Snacky Dash B2S' });
+            }
             els.overlay.classList.add('hidden');
             onRegisteredCb?.(player);
         } catch (e) {
