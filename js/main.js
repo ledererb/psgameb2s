@@ -160,6 +160,10 @@ function init() {
     // ── Keyboard input ──
 
     document.addEventListener('keydown', (e) => {
+        // Űrlapmezőbe gépelés ne triggerelje a játékvezérlést
+        // (a KeyA/KeyD/Space preventDefault különben elnyeli a gépelést)
+        if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select')) return;
+
         // Jump: Space or ArrowUp
         if (e.code === 'Space' || e.code === 'ArrowUp') {
             e.preventDefault();

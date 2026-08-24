@@ -759,3 +759,6 @@ kbd {
     padding: 4px;
 }
 .install-hint-close:hover { color: #ECF0F1; }
+
+/* a natív select lenyíló option-listája fehér hátterű → a fehér szöveg olvashatatlan volt */
+.reg-form select option { color: #1A1A2E; background: #FFFFFF; }

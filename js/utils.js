@@ -12,7 +12,7 @@ export const JUMP_FORCE = -13;
 export const DOUBLE_JUMP_FORCE = -11;
 
 // Speed progression
-export const INITIAL_SPEED = 5;
+export const INITIAL_SPEED = 6;
 export const MAX_SPEED = 15;
 export const SPEED_INCREMENT = 0.001;
 
