@@ -182,7 +182,7 @@ export class Game {
         this.milestoneThresholds = [6000, 16000, 32000, 55000];
         this.currentMilestone = 0;
         this.milestoneBanner = null; // { text, timer }
-        this.milestoneNames = ['🌅 HAJNAL ÉRA!', '☀️ NAPPALI ÉRA!', '🌆 NAPLEMENTE ÉRA!', '🌃 NEON VÁROS!'];
+        this.milestoneBanner = null; // inaktív (a feliratok kiszedve)
 
         // ── Futam-statisztika (game over összesítő, session-only) ──
         this.runDistance = 0;
@@ -626,11 +626,8 @@ export class Game {
         if (this.currentMilestone < this.milestoneThresholds.length &&
             this.score >= this.milestoneThresholds[this.currentMilestone]) {
             // Trigger theme change: 6000→dawn(1), 16000→day(2), 32000→sunset(3), 55000→neon(4)
+            // (az „ÉRA"-feliratos banner a user kérésére ki van véve — a téma marad)
             if (this.world) this.world.setTheme(Math.min(this.currentMilestone + 1, 4));
-            this.milestoneBanner = {
-                text: this.milestoneNames[this.currentMilestone],
-                timer: 150 // ~2.5 seconds
-            };
             this.currentMilestone++;
         }
 

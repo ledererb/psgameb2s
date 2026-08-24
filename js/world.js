@@ -15,15 +15,15 @@ const SEGMENT_LEN = 20; // must match models.js ROAD_LEN
 // Fog distances pushed out (vs. original 28-40/85-110) so obstacles
 // spawning at z=-76 are clearly visible by z≈-40 (Task 4 review fix).
 const THEMES_3D = [
-    { sky: '#0B0B2B', fogNear: 45, fogFar: 110, hemiSky: '#8899FF', hemiGround: '#332222', sun: '#AABBFF', sunI: 0.8, windowI: 1.0,
+    { sky: '#0B0B2B', fogNear: 45, fogFar: 110, hemiSky: '#8899FF', hemiGround: '#332222', sun: '#AABBFF', sunI: 0.8, windowI: 1.0, ground: '#14141C',
       skyTop: '#030312', starI: 1.0,  celColor: '#E8ECFF', celPos: [-0.30, 0.28, -1], celSize: 10, glowI: 0.5 }, // night
-    { sky: '#3D2B52', fogNear: 50, fogFar: 120, hemiSky: '#FFB347', hemiGround: '#443333', sun: '#FF9F5A', sunI: 0.9, windowI: 0.7,
+    { sky: '#3D2B52', fogNear: 50, fogFar: 120, hemiSky: '#FFB347', hemiGround: '#443333', sun: '#FF9F5A', sunI: 0.9, windowI: 0.7, ground: '#3A2E42',
       skyTop: '#1B1032', starI: 0.25, celColor: '#FFB347', celPos: [0.30, 0.14, -1],   celSize: 12, glowI: 0.8 }, // dawn
-    { sky: '#4A90D9', fogNear: 60, fogFar: 140, hemiSky: '#BBDDFF', hemiGround: '#556644', sun: '#FFF4D6', sunI: 1.3, windowI: 0.1,
+    { sky: '#4A90D9', fogNear: 60, fogFar: 140, hemiSky: '#BBDDFF', hemiGround: '#556644', sun: '#FFF4D6', sunI: 1.3, windowI: 0.1, ground: '#7D8C66',
       skyTop: '#2356A8', starI: 0.0,  celColor: '#FFF4D6', celPos: [0.25, 0.22, -0.8],  celSize: 9,  glowI: 0.6 }, // day
-    { sky: '#D96A3B', fogNear: 50, fogFar: 115, hemiSky: '#FFAA66', hemiGround: '#553333', sun: '#FF7733', sunI: 1.0, windowI: 0.8,
+    { sky: '#D96A3B', fogNear: 50, fogFar: 115, hemiSky: '#FFAA66', hemiGround: '#553333', sun: '#FF7733', sunI: 1.0, windowI: 0.8, ground: '#46302A',
       skyTop: '#46183F', starI: 0.15, celColor: '#FF7733', celPos: [0.05, 0.09, -1],  celSize: 16, glowI: 1.0 }, // sunset
-    { sky: '#12082B', fogNear: 45, fogFar: 110, hemiSky: '#FF44CC', hemiGround: '#220033', sun: '#44FFEE', sunI: 0.9, windowI: 1.2,
+    { sky: '#12082B', fogNear: 45, fogFar: 110, hemiSky: '#FF44CC', hemiGround: '#220033', sun: '#44FFEE', sunI: 0.9, windowI: 1.2, ground: '#0E0E22',
       skyTop: '#05020F', starI: 0.8,  celColor: '#FF44CC', celPos: [-0.30, 0.28, -1],   celSize: 10, glowI: 0.9 }, // neon
 ];
 
@@ -45,6 +45,7 @@ function parseTheme(t) {
         celPos: new THREE.Vector3(...t.celPos).normalize(),
         celSize: t.celSize,
         glowI: t.glowI,
+        ground: new THREE.Color(t.ground),
     };
 }
 
@@ -82,14 +83,15 @@ export class World3D {
 
         // Tömör földfelület az egész pálya alatt — eddig az út mellett és az
         // épületek alatt „légüres" volt a tér (a jelzett „földhiány").
-        const ground = new THREE.Mesh(
+        // A színe témafüggő (nappali témánál világosabb), a lerp-gép viszi.
+        this.groundMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(64, 340),
-            new THREE.MeshStandardMaterial({ color: 0x14141C, roughness: 1 })
+            new THREE.MeshStandardMaterial({ color: this._cur.ground.getHex(), roughness: 1 })
         );
-        ground.rotation.x = -Math.PI / 2;
-        ground.position.set(0, -0.02, -80);
-        ground.receiveShadow = true;
-        sceneMgr.scene.add(ground);
+        this.groundMesh.rotation.x = -Math.PI / 2;
+        this.groundMesh.position.set(0, -0.02, -80);
+        this.groundMesh.receiveShadow = true;
+        sceneMgr.scene.add(this.groundMesh);
 
         // Háttér (ég-dóm, csillagok, égitest, sziluett-sávok) — a téma-gép hajtja.
         // Kezdőállapot: a settle-elt éjszakai téma (this._cur).
@@ -145,6 +147,7 @@ export class World3D {
             cur.celPos.lerpVectors(from.celPos, to.celPos, t);
             cur.celSize = from.celSize + (to.celSize - from.celSize) * t;
             cur.glowI = from.glowI + (to.glowI - from.glowI) * t;
+            cur.ground.lerpColors(from.ground, to.ground, t);
             this._applyTheme(cur);
         }
         if (this.background) this.background.update();
@@ -161,6 +164,7 @@ export class World3D {
         for (const b of this.buildings) {
             b.mesh.material.emissiveIntensity = cur.windowI;
         }
+        if (this.groundMesh) this.groundMesh.material.color.copy(cur.ground);
         if (this.background) this.background.applyTheme(cur);
     }
 
@@ -182,6 +186,7 @@ export class World3D {
             celPos: c.celPos.clone(),
             celSize: c.celSize,
             glowI: c.glowI,
+            ground: c.ground.clone(),
         };
     }
 
