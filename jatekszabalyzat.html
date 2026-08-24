@@ -17,6 +17,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <style>
+        /* a játék fullscreen body-szabályának (overflow:hidden, user-select:none) felüloldása:
+           ezen az oldalon görgetés és szövegkijelölés kell */
+        html, body { height: auto; overflow: visible; user-select: text; }
         body { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
         .privacy h1 { font-family: 'Bangers', cursive; letter-spacing: 2px; }
         .privacy h2 { margin-top: 28px; font-size: 20px; }
