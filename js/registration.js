@@ -13,6 +13,7 @@ const ERROR_TEXT = {
     nickname_length: 'A becenév legyen 2–20 karakter.',
     nickname_chars: 'Csak betű, szám, szóköz, pont, kötőjel és alulvonás.',
     nickname_blocked: 'Ez a becenév nem használható, válassz másikat.',
+    email_invalid: 'Ez az e-mail cím nem tűnik jónak — ellenőrizd (vagy hagyd üresen).',
     school_invalid: 'Add meg az iskola nevét és a települést.',
     class_requires_school: 'Osztály csak iskolával együtt adható meg.',
     rate_limited: 'Túl sok próbálkozás, várj egy percet.',
@@ -45,6 +46,7 @@ export function initRegistration({ mode: m = 'register', prefill = null, onRegis
         els = {
             overlay: $('reg-overlay'),
             nickInput: $('reg-nickname'),
+            emailInput: $('reg-email'),
             schoolInput: $('reg-school-input'),
             results: $('reg-school-results'),
             newSchoolBox: $('reg-school-new'),
@@ -67,6 +69,8 @@ export function initRegistration({ mode: m = 'register', prefill = null, onRegis
     // (az edit mód inline elrejtései/disabled-jei így nem ragadnak be)
     els.nickInput.disabled = false;
     els.nickInput.value = '';
+    els.emailInput.value = '';
+    els.emailInput.classList.remove('hidden');
     els.schoolInput.value = '';
     els.schoolInput.placeholder = 'Iskola keresése (nem kötelező)';
     els.leaveBtn.classList.add('hidden');
@@ -118,6 +122,7 @@ export function initRegistration({ mode: m = 'register', prefill = null, onRegis
         document.querySelector('.age-row').style.display = 'none';
         els.consent.closest('.checkbox-row').style.display = 'none';
         els.rulesConsent.closest('.checkbox-row').style.display = 'none';
+        els.emailInput.classList.add('hidden'); // e-mailt edit módban (még) nem módosítunk
         els.submitBtn.textContent = 'Mentés';
     }
 
@@ -262,6 +267,8 @@ function buildPayload() {
     const p = {};
     if (mode === 'register') {
         p.nickname = els.nickInput.value.trim();
+        const em = els.emailInput.value.trim();
+        if (em) p.email = em; // opcionális — csak ha kitölti
         const age = document.querySelector('input[name="reg-age"]:checked');
         p.consent_is_parent = age?.value === 'parent';
     }

@@ -55,6 +55,12 @@ Deno.serve(async (req) => {
   if (BLOCKLIST.some((w) => lower.includes(w))) return json({ error: 'nickname_blocked' }, 400);
   if (typeof b.consent_is_parent !== 'boolean') return json({ error: 'consent_required' }, 400);
 
+  // ── E-mail (opcionális — csak nyertes-értesítéshez; D4-módosítás) ──
+  const email = norm(String(b.email ?? '')).toLowerCase();
+  if (email && (email.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+    return json({ error: 'email_invalid' }, 400);
+  }
+
   // ── Iskola feloldás (opcionális) ──
   let schoolId: number | null = (b.school_id as number) ?? null;
   if (schoolId && b.new_school) return json({ error: 'school_conflict' }, 400);
@@ -116,6 +122,7 @@ Deno.serve(async (req) => {
   const { data: player, error } = await sb.from('players').insert({
     nickname, school_id: schoolId, class_id: classId,
     consent_is_parent: b.consent_is_parent,
+    ...(email ? { email } : {}),
   }).select('id, secret').single();
   if (error) return json({ error: 'player_create_failed' }, 500);
 

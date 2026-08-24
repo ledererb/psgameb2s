@@ -72,7 +72,9 @@ Supabase (dhfuqznsjetcgafwgkuq)
 1. Anon/publishable kulcs SOSEM ír táblába — csak Edge Function ír (service role env-ből).
 2. A játékmag (`js/game.js`, `world.js`, `player.js`, `scene.js`, `models.js`, `effects.js`, `audio.js`, `collectible.js`, `obstacle.js`, `powerup.js`, `pit.js`) ÉRINTETLEN marad.
 3. Minden szerver-adat renderelésekor `esc()` (XSS) — lásd leaderboard.js/main.js; új render-pontnál is kötelező.
-4. GDPR: NINCS email/valós név gyűjtés. Sehol. A becenév szerveroldali regexe: `^[\p{L}\p{N} ._-]+$` (2-20 kar), `new_school`/`new_class_name`-nél `<`/`>` tilos.
+4. GDPR: valós név/telefonszám gyűjtése tilos. E-mail: **2026-08-19-től OPCIONÁLIS**
+   (`players.email`, csak ha a játékos megadja — nyertes-értesítés; üzleti döntés).
+   A becenév szerveroldali regexe: `^[\p{L}\p{N} ._-]+$` (2-20 kar), `new_school`/`new_class_name`-nél `<`/`>` tilos.
 5. Frontend dependency-free (nincs npm a játékhoz); a `scripts/` mappa build-time eszköz (xlsx).
 
 ## 4. Gyakori műveletek (pontos parancsok)
