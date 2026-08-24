@@ -80,6 +80,17 @@ export class World3D {
             }
         }
 
+        // Tömör földfelület az egész pálya alatt — eddig az út mellett és az
+        // épületek alatt „légüres" volt a tér (a jelzett „földhiány").
+        const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(64, 340),
+            new THREE.MeshStandardMaterial({ color: 0x14141C, roughness: 1 })
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.set(0, -0.02, -80);
+        ground.receiveShadow = true;
+        sceneMgr.scene.add(ground);
+
         // Háttér (ég-dóm, csillagok, égitest, sziluett-sávok) — a téma-gép hajtja.
         // Kezdőállapot: a settle-elt éjszakai téma (this._cur).
         this.background = new Background3D(sceneMgr.scene, this._cur);
