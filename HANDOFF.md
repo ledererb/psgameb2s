@@ -135,7 +135,7 @@ Plauzibilitás (submit-score): `score ≤ 4000·(duration_s) + 5000`, duration 3
 ## 6. Nyitott feladatok (üzleti/launch — NEM kód)
 
 1. **Domain**: a `hello.peksnack.hu/jatek/` **ÉL** (2026-08-14, Vercel path-proxy + CORS-allowlist). Ha mégis külön végleges domain kell (pl. `jatek.peksnack.hu`) → Vercel-ben hozzárendelés + az `ALLOWED_ORIGINS` listához hozzáadás + 4 function redeploy.
-2. **privacy.html + jatekszabalyzat.html**: **kitöltve TERVEZETként** (2026-08-14) — valós cégadatokkal (impresszum alapján), GDPR-jogalappal, adatfeldolgozókkal (Supabase eu-west-1, Vercel), kiskorú-kiegészítéssel. A reg-űrlap külön szabályzat-checkboxot kapott. **Jogi review továbbra is LAUNCH-BLOKKOLÓ**, és a doksik tetején lévő sárga „TERVEZET" doboz listázza a megerősítésre váró üzleti döntéseket: kampány dátumok (2026-09-01→30), sorsolás napja (2026-10-15), claim-határidő (30 nap), nyeremény-hozzárendelés (Dorko→egyéni, Feldobox→osztály, iskola→oklevél), „1 játékos = 1 sorsjegy", szervező-munkatársak kizárása. Jóváhagyáskor a két „TERVEZET"-dobozt törölni kell.
+2. **privacy.html + jatekszabalyzat.html**: **VÉGLEGESÍTVE 2026-08-19** (a „TERVEZET"-bannerek kiszedve a döntés szerint; tartalom: valós cégadatok, GDPR-jogalap, adatfeldolgozók (Supabase eu-west-1, Vercel, Google, Meta), kampány-időtartam 2026-08-24→10-02, claim 30 nap, top-5 átlag-modell, opcionális e-mail). Független jogi review továbbra is ajánlott launch előtt, de nincs bennük helyőrző.
 3. **Kampányzáró admin-scriptek** (még nincsenek, ~20 perc): sorsolás-export (players ≥1 score) + kampányvégi tömeges adattörlés.
 4. **Token-higiénia**: `sbp_...` access token revoke a dashboardon, ha nem kell.
 
