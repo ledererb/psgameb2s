@@ -129,7 +129,7 @@ FIGYELEM: az Edge Functionök CORS-a az **ALLOWED_ORIGINS** allowlistből reflec
 - `scores`: player_id (cascade), score, distance_m, duration_ms, counts_for_team, client_run_id (parciális unique — idempotencia).
 - `fn_player_stats(uuid)` → `{rank_individual, best_score, school:{rank,avg,players,below_threshold}|null, class:{rank,avg,players,below_threshold}|null}` (a class is avg + threshold, top-5 modell).
 
-Plauzibilitás (submit-score): `score ≤ 1500·(duration_s) + 5000` **és** `score ≤ 150·(distance_m) + 5000`, duration 3 s–1 óra,
+Plauzibilitás (submit-score): `score ≤ 4000·(duration_s) + 5000` **és** `score ≤ 400·(distance_m) + 5000`, duration 3 s–1 óra, — a sapkák a fizikai maximumra (100×20 kombó×2=4000 p/darab) vannak lazítva, durva hamis beküldésekre,
 1 beküldés/10 mp/játékos (isolate-memória, best-effort), register 5/perc/IP (szintén isolate).
 
 ## 6. Nyitott feladatok (üzleti/launch — NEM kód)

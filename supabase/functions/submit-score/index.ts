@@ -17,8 +17,10 @@ const corsHeaders = (origin: string | null) => ({
 
 // Konzervatív plauzibilitás (game.js: ~60 p/mp alap, de a kombó-szorzó és a
 // 2× pontszorzó együtt elit futamban 2000 p/mp fölé viheti — 4000 a biztonságos határ)
-const MAX_SCORE_PER_SEC = 1500;  // éles top ~1000/mp + headroom (korábban 4000)
-const MAX_SCORE_PER_METER = 150; // éles max ~70/m, 2× margin — pont↔táv keresztellenőrzés
+// Sapkák: LAZÍTVA a valós fizika alapján (darabonként max 100×20×2=4000 p).
+// Cél: csak a durva hamis beküldések legyenek megfogva, a valós elit futamok sosem.
+const MAX_SCORE_PER_SEC = 4000;   // éles top-átlag ~1000/mp; 2000+/mp az elit határa
+const MAX_SCORE_PER_METER = 400;  // éles max ~70/m; a kombó×20×2 elméletileg 150–250/m-et is enged
 const BASE_ALLOWANCE = 5000;
 const MIN_DURATION_MS = 3_000;
 const MAX_DURATION_MS = 3_600_000; // 1 óra
