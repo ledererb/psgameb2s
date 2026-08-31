@@ -116,7 +116,7 @@ FIGYELEM: register rate-limit 5 perc/IP → egyszerre csak 1-2 tesztfuttatás.
 python3 -m http.server 8080   # repo gyökérben
 # Playwright MCP: http://localhost:8080 → __snacky.game.onGameOver(12345, {distance:800,maxCombo:3,nearMisses:1,bosses:0})
 ```
-`window.__snacky = { game, world, playerStore, api }` debug-handle.
+`window.__snacky = { game, world, playerStore, api }` debug-handle — **csak `?debug=1` paraméterrel** (élőben nem elérhető; a konzolos onGameOver-csalás lezárva).
 Póló-textúrák gyors ellenőrzése (mind a 6, front-nézet): `http://localhost:8080/dev-skins-preview.html`
 (a fájl NINCS a dist-whitelistben, nem deployolódik).
 FIGYELEM: az Edge Functionök CORS-a az **ALLOWED_ORIGINS** allowlistből reflectel (jelenleg: `snackydash.vercel.app,hello.peksnack.hu`) — a localhostos oldalról a hívások **CORS-hibát adnak**. Lokális full-flow teszthez ideiglenesen: `~/bin/supabase secrets set ALLOWED_ORIGINS='*'` + redeploy, utána vissza az allowlistára! (A régi `ALLOWED_ORIGIN` secret csak fallback, ha az `ALLOWED_ORIGINS` nincs beállítva.)
@@ -129,7 +129,7 @@ FIGYELEM: az Edge Functionök CORS-a az **ALLOWED_ORIGINS** allowlistből reflec
 - `scores`: player_id (cascade), score, distance_m, duration_ms, counts_for_team, client_run_id (parciális unique — idempotencia).
 - `fn_player_stats(uuid)` → `{rank_individual, best_score, school:{rank,avg,players,below_threshold}|null, class:{rank,avg,players,below_threshold}|null}` (a class is avg + threshold, top-5 modell).
 
-Plauzibilitás (submit-score): `score ≤ 4000·(duration_s) + 5000`, duration 3 s–1 óra,
+Plauzibilitás (submit-score): `score ≤ 1500·(duration_s) + 5000` **és** `score ≤ 150·(distance_m) + 5000`, duration 3 s–1 óra,
 1 beküldés/10 mp/játékos (isolate-memória, best-effort), register 5/perc/IP (szintén isolate).
 
 ## 6. Nyitott feladatok (üzleti/launch — NEM kód)

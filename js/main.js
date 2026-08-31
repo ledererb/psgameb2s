@@ -89,8 +89,11 @@ function init() {
     world = new World3D(sceneMgr);
     game = new Game(audio, world, sceneMgr);
 
-    // Szándékolt, TARTÓS debug-handle a vizuális verifikációkhoz (spec §5).
-    window.__snacky = { game, world, playerStore, api };
+    // Debug-handle a vizuális verifikációkhoz (spec §5) — csak ?debug=1 mellett,
+    // élőben ne legyen elérhető (csalásvédelem: onGameOver tetszőleges ponttal)
+    if (new URLSearchParams(location.search).has('debug')) {
+        window.__snacky = { game, world, playerStore, api };
+    }
 
     leaderboardGameover = new LeaderboardUI(
         document.getElementById('leaderboard-list'),

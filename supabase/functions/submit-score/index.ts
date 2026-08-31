@@ -17,7 +17,8 @@ const corsHeaders = (origin: string | null) => ({
 
 // Konzervatív plauzibilitás (game.js: ~60 p/mp alap, de a kombó-szorzó és a
 // 2× pontszorzó együtt elit futamban 2000 p/mp fölé viheti — 4000 a biztonságos határ)
-const MAX_SCORE_PER_SEC = 4000;
+const MAX_SCORE_PER_SEC = 1500;  // éles top ~1000/mp + headroom (korábban 4000)
+const MAX_SCORE_PER_METER = 150; // éles max ~70/m, 2× margin — pont↔táv keresztellenőrzés
 const BASE_ALLOWANCE = 5000;
 const MIN_DURATION_MS = 3_000;
 const MAX_DURATION_MS = 3_600_000; // 1 óra
@@ -47,6 +48,10 @@ Deno.serve(async (req) => {
     return json({ error: 'duration_invalid' }, 422);
   }
   if (score > MAX_SCORE_PER_SEC * (duration / 1000) + BASE_ALLOWANCE) {
+    return json({ error: 'score_implausible' }, 422);
+  }
+  // pont↔táv keresztellenőrzés: a távolság is kliens-adat, de együtt nehezebb hazudni
+  if (score > MAX_SCORE_PER_METER * distance + BASE_ALLOWANCE) {
     return json({ error: 'score_implausible' }, 422);
   }
 
