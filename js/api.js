@@ -50,7 +50,7 @@ export const api = {
     fetchSchools: () =>
         restGet('leaderboard_schools?select=school_id,name,city,avg_score,player_count&limit=100'),
     fetchClasses: (schoolId) =>
-        restGet(`leaderboard_classes?select=class_id,name,total_score,player_count&school_id=eq.${schoolId}&limit=100`),
+        restGet(`leaderboard_classes?select=class_id,name,avg_score,player_count&school_id=eq.${schoolId}&limit=100`),
 
     // ── Írás (Edge Functions) ──
     register: (payload) => edge('register', payload),
