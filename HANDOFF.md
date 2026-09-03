@@ -14,7 +14,7 @@ iskolához/osztályhoz csatlakoznak, és a pontjaik versenybe számítanak.
 
 **Versenymodell (D2 döntés — NE változtasd meg egyeztetés nélkül):**
 - 🧑 **Egyéni:** kampány végén **sorsolás** a résztvevők között — a ranglista csak megjelenítés (top 100, játékosonkénti legjobb)
-- 👥 **Osztály:** tagok csapatjelölt legjobbjai közül az **5 legjobb ÁTLAGA**, iskolán belüli verseny, **min. 5 tag** küszöb (2026-08-18-i D2-módosítás: korábban ÖSSZEG volt — létszám- és multireg-manipulálható)
+- 👥 **Osztály:** tagok csapatjelölt legjobbjai közül az **5 legjobb ÁTLAGA**, iskolán belüli verseny — **küszöb NÉLKÜL** (2026-08-31: minden osztály rangosítva, 5 fő alatt az összes tag átlaga)
 - 🏫 **Iskola:** tagok csapatjelölt legjobbjai közül az **5 legjobb ÁTLAGA**, min. **5 játékos** küszöb; legmagasabb átlag nyer
 - Beküldéskor checkbox (`counts_for_team`): a pont számítson-e a csapatnak (alapból bepipálva)
 - Iskola/osztály-tagozódás **nem kötelező** (felnőttek is játszhatnak)

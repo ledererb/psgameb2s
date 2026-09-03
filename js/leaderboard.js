@@ -78,7 +78,7 @@ export class LeaderboardUI {
             });
         } else {
             note = this.classSchoolId
-                ? 'Az osztályok az <strong>5 legjobb tagjuk</strong> átlagával versenyeznek (min. 5 tag kell).'
+                ? 'Az osztályok az <strong>5 legjobb tagjuk</strong> átlagával versenyeznek (5 fő alatt az összes tag átlaga).'
                 : 'Válassz iskolát a game over képernyőn, hogy lásd az osztályait!';
             html += '<th>#</th><th>Osztály</th><th>Top-5 átlag</th><th>Tag</th></tr></thead><tbody>';
             data.forEach((r, i) => {
