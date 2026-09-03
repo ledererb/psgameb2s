@@ -49,8 +49,8 @@ export const api = {
         restGet('leaderboard_individual?select=player_id,nickname,school_name,class_name,best_score&limit=100'),
     fetchSchools: () =>
         restGet('leaderboard_schools?select=school_id,name,city,avg_score,player_count&limit=100'),
-    fetchClasses: (schoolId) =>
-        restGet(`leaderboard_classes?select=class_id,name,avg_score,player_count&school_id=eq.${schoolId}&limit=100`),
+    fetchClasses: () =>
+        restGet('leaderboard_classes?select=class_id,name,school_name,school_city,avg_score,player_count&order=avg_score.desc&limit=100'),
 
     // ── Írás (Edge Functions) ──
     register: (payload) => edge('register', payload),

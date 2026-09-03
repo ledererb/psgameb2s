@@ -44,11 +44,7 @@ export class LeaderboardUI {
     _fetch() {
         if (this.tab === 'individual') return api.fetchIndividual();
         if (this.tab === 'schools') return api.fetchSchools();
-        // Frissen regisztrált / iskolát váltó játékosnál a tárolt érték stále
-        // lehet — mindig frissen olvassuk, hogy reload nélkül is helyes legyen
-        this.classSchoolId = playerStore.load()?.school?.id ?? null;
-        if (!this.classSchoolId) return Promise.resolve([]);
-        return api.fetchClasses(this.classSchoolId);
+        return api.fetchClasses(); // globális osztálylista iskolanévvel
     }
 
     _render(data, cacheNote) {
@@ -67,7 +63,7 @@ export class LeaderboardUI {
                     <td class="lb-score">${fmt(r.best_score)}</td></tr>`;
             });
         } else if (this.tab === 'schools') {
-            note = 'Az iskolák az <strong>5 legjobb játékosuk</strong> átlagával versenyeznek (min. 5 játékos kell).';
+            note = 'Az iskolák az <strong>5 legjobb játékosuk</strong> átlagával versenyeznek (5 fő alatt az összes játékos átlaga).';
             html += '<th>#</th><th>Iskola</th><th>Átlagpont</th><th>Játékos</th></tr></thead><tbody>';
             data.forEach((r, i) => {
                 html += `<tr class="${i < 3 ? 'lb-top3' : ''} ${r.school_id === me?.school?.id ? 'lb-own' : ''}">
@@ -77,14 +73,13 @@ export class LeaderboardUI {
                     <td>${r.player_count}</td></tr>`;
             });
         } else {
-            note = this.classSchoolId
-                ? 'Az osztályok az <strong>5 legjobb tagjuk</strong> átlagával versenyeznek (5 fő alatt az összes tag átlaga).'
-                : 'Válassz iskolát a game over képernyőn, hogy lásd az osztályait!';
-            html += '<th>#</th><th>Osztály</th><th>Top-5 átlag</th><th>Tag</th></tr></thead><tbody>';
+            note = 'Az osztályok az <strong>5 legjobb tagjuk</strong> átlagával versenyeznek (5 fő alatt az összes tag átlaga).';
+            html += '<th>#</th><th>Osztály</th><th>Iskola</th><th>Top-5 átlag</th><th>Tag</th></tr></thead><tbody>';
             data.forEach((r, i) => {
                 html += `<tr class="${i < 3 ? 'lb-top3' : ''} ${r.class_id === me?.class?.id ? 'lb-own' : ''}">
                     <td class="lb-rank">${MEDALS[i] ?? i + 1}</td>
                     <td>${esc(r.name)}</td>
+                    <td>${esc(r.school_name ?? '—')} <span class="lb-city">${esc(r.school_city ?? '')}</span></td>
                     <td class="lb-score">${fmt(r.avg_score)}</td>
                     <td>${r.player_count}</td></tr>`;
             });
