@@ -92,13 +92,13 @@
             return r.json();
         }
 
-        function render(d) {
+        function render(data) {
             $('updated').textContent = 'Frissítve: ' + new Date(d.generated_at).toLocaleString('hu-HU');
-            renderMeta(d);
-            renderMain(d);
+            renderMeta(d.meta);
+            renderMain(d.stats);
         }
-        function renderMeta(d) {
-            const m = d.meta;
+        function renderMeta(meta) {
+            const m = meta;
             const mc = $('meta-cards');
             if (!m || !m.b2s_traffic_7d) return;
             const t = m.b2s_traffic_7d;
@@ -111,8 +111,8 @@
                 [Number(t.cpc.toFixed(2)) + ' Ft', 'CPC'],
             ].map(([v, l]) => `<div class="card"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
         }
-        function renderMain(d) {
-            const t = d.totals;
+        function renderMain(stats) {
+            const t = stats.totals;
             const cards = [
                 [fmt(t.players), 'Regisztrált játékos'],
                 [fmt(t.new_today), 'Új ma'],
@@ -142,8 +142,8 @@
                 mc.innerHTML = '<div class="card" style="grid-column:1/-1"><div class="l">Nincs elérhető Meta-adat még.</div></div>';
             }
 
-            const max = Math.max(...d.daily.map((x) => Math.max(x.registrations, x.runs)), 1);
-            $('bars').innerHTML = d.daily.map((x) => {
+            const max = Math.max(...stats.daily.map((x) => Math.max(x.registrations, x.runs)), 1);
+            $('bars').innerHTML = stats.daily.map((x) => {
                 const rh = Math.round(x.runs / max * 100), gh = Math.round(x.registrations / max * 100);
                 return `<div class="bar" style="height:${rh}%" title="${esc(x.day)}: ${x.registrations} reg, ${x.runs} futam">` +
                     `<div class="bar reg" style="height:${gh}%"></div></div>`;
@@ -154,11 +154,11 @@
                     rows + '</tbody>';
             };
             table('t-players', ['#', 'Játékos', 'Iskola', 'Legjobb', 'Futam'],
-                d.top_players.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.nickname)}</td><td>${esc(r.school_name ?? '—')}</td><td>${fmt(r.best_score)}</td><td>${r.run_count}</td></tr>`).join(''));
+                stats.top_players.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.nickname)}</td><td>${esc(r.school_name ?? '—')}</td><td>${fmt(r.best_score)}</td><td>${r.run_count}</td></tr>`).join(''));
             table('t-schools', ['#', 'Iskola', 'Átlag', 'Játékos'],
-                d.top_schools.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.name)} <span style="color:#95A5A6">${esc(r.city)}</span></td><td>${fmt(r.avg_score)}</td><td>${r.player_count}</td></tr>`).join(''));
+                stats.top_schools.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.name)} <span style="color:#95A5A6">${esc(r.city)}</span></td><td>${fmt(r.avg_score)}</td><td>${r.player_count}</td></tr>`).join(''));
             table('t-classes', ['#', 'Osztály', 'Iskola', 'Átlag', 'Tag'],
-                d.top_classes.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.name)}</td><td>${esc(r.school_name)}</td><td>${fmt(r.avg_score)}</td><td>${r.player_count}</td></tr>`).join(''));
+                stats.top_classes.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.name)}</td><td>${esc(r.school_name)}</td><td>${fmt(r.avg_score)}</td><td>${r.player_count}</td></tr>`).join(''));
 
             $('gate').classList.add('hidden');
             $('board').classList.remove('hidden');
