@@ -93,9 +93,9 @@
         }
 
         function render(data) {
-            $('updated').textContent = 'Frissítve: ' + new Date(d.generated_at).toLocaleString('hu-HU');
-            renderMeta(d.meta);
-            renderMain(d.stats);
+            $('updated').textContent = 'Frissítve: ' + new Date(data.generated_at).toLocaleString('hu-HU');
+            renderMeta(data.meta);
+            renderMain(data.stats);
         }
         function renderMeta(meta) {
             const m = meta;
