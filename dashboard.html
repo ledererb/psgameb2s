@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kampány-dashboard — Snacky Dash B2S</title>
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg:#0D1333; --card:#1A2150; --green:#8DC63F; --yellow:#F1C40F; --muted:#95A5A6; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family:'Outfit',system-ui,sans-serif; background:var(--bg); color:#ECF0F1; min-height:100vh; padding:24px; }
+        h1 { font-size:1.4rem; margin-bottom:4px; }
+        .sub { color:var(--muted); font-size:.85rem; margin-bottom:20px; }
+        .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:24px; }
+        .card { background:var(--card); border-radius:12px; padding:14px 16px; }
+        .card .v { font-size:1.7rem; font-weight:800; color:var(--yellow); }
+        .card .l { font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+        .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        @media (max-width: 900px) { .grid { grid-template-columns:1fr; } }
+        .panel { background:var(--card); border-radius:12px; padding:16px; margin-bottom:16px; }
+        .panel h2 { font-size:.95rem; margin-bottom:10px; color:var(--green); }
+        table { width:100%; border-collapse:collapse; font-size:.85rem; }
+        th { text-align:left; color:var(--muted); font-weight:600; padding:4px 6px; border-bottom:1px solid rgba(255,255,255,.12); }
+        td { padding:5px 6px; border-bottom:1px solid rgba(255,255,255,.05); }
+        .bars { display:flex; align-items:flex-end; gap:3px; height:120px; }
+        .bar { flex:1; background:var(--green); border-radius:3px 3px 0 0; min-height:2px; position:relative; opacity:.85; }
+        .bar.reg { background:var(--yellow); }
+        .legend { font-size:.75rem; color:var(--muted); margin-top:6px; }
+        .dot { display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:middle; margin-right:4px; }
+        #gate { max-width:360px; margin:12vh auto; text-align:center; }
+        #gate input { width:100%; padding:12px 14px; border-radius:10px; border:2px solid rgba(255,255,255,.2);
+            background:rgba(255,255,255,.06); color:#fff; font-size:1rem; }
+        #gate button { margin-top:10px; width:100%; padding:12px; border:none; border-radius:10px;
+            background:var(--green); color:#101736; font-weight:800; font-size:1rem; cursor:pointer; }
+        #err { color:#ff6b6b; font-size:.85rem; margin-top:8px; min-height:1.2em; }
+        .hidden { display:none; }
+        a.logout { color:var(--muted); font-size:.8rem; cursor:pointer; text-decoration:underline; }
+    </style>
+</head>
+<body>
+    <div id="gate">
+        <h1>📊 Kampány-dashboard</h1>
+        <p class="sub">Add meg a dashboard-jelszót</p>
+        <input type="password" id="key" placeholder="Jelszó" autofocus>
+        <button id="go">Belépés</button>
+        <p id="err"></p>
+    </div>
+
+    <div id="board" class="hidden">
+        <h1>📊 Snacky Dash B2S — kampány-dashboard</h1>
+        <p class="sub" id="updated"></p>
+
+        <div class="cards" id="cards"></div>
+
+        <div class="grid">
+            <div class="panel">
+                <h2>Napi regisztrációk és futamok (30 nap)</h2>
+                <div class="bars" id="bars"></div>
+                <div class="legend">
+                    <span class="dot" style="background:var(--yellow)"></span>regisztráció
+                    &nbsp; <span class="dot" style="background:var(--green)"></span>futam
+                </div>
+            </div>
+            <div>
+                <div class="panel"><h2>Top 10 játékos</h2><table id="t-players"></table></div>
+                <div class="panel"><h2>Top 10 iskola (top-5 átlag)</h2><table id="t-schools"></table></div>
+                <div class="panel"><h2>Top 10 osztály (top-5 átlag)</h2><table id="t-classes"></table></div>
+            </div>
+        </div>
+        <p><a class="logout" id="logout">Kilépés</a></p>
+    </div>
+
+    <script type="module">
+        const API = 'https://dhfuqznsjetcgafwgkuq.supabase.co/functions/v1/dashboard-stats';
+        const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
+            (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+        const fmt = (n) => Number(n ?? 0).toLocaleString('hu-HU');
+
+        const $ = (id) => document.getElementById(id);
+
+        async function load(key) {
+            const r = await fetch(API, { headers: { 'x-dashboard-key': key } });
+            if (r.status === 401) throw new Error('unauthorized');
+            if (!r.ok) throw new Error('server');
+            return r.json();
+        }
+
+        function render(d) {
+            $('updated').textContent = 'Frissítve: ' + new Date(d.generated_at).toLocaleString('hu-HU');
+            const t = d.totals;
+            const cards = [
+                [fmt(t.players), 'Regisztrált játékos'],
+                [fmt(t.new_today), 'Új ma'],
+                [fmt(t.new_7d), 'Új 7 nap alatt'],
+                [fmt(t.scorers), 'Pontot küldő játékos'],
+                [fmt(t.runs), 'Beküldött futam'],
+                [fmt(t.schools_active) + ' / ' + fmt(t.schools_total), 'Aktív iskola (összes)'],
+                [fmt(t.classes_active), 'Aktív osztály'],
+                [fmt(t.with_email), 'E-mailt megadott'],
+            ];
+            $('cards').innerHTML = cards.map(([v, l]) => `<div class="card"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+
+            const max = Math.max(...d.daily.map((x) => Math.max(x.registrations, x.runs)), 1);
+            $('bars').innerHTML = d.daily.map((x) => {
+                const rh = Math.round(x.runs / max * 100), gh = Math.round(x.registrations / max * 100);
+                return `<div class="bar" style="height:${rh}%" title="${esc(x.day)}: ${x.registrations} reg, ${x.runs} futam">` +
+                    `<div class="bar reg" style="height:${gh}%"></div></div>`;
+            }).join('');
+
+            const table = (id, head, rows) => {
+                $(id).innerHTML = '<thead><tr>' + head.map((h) => `<th>${h}</th>`).join('') + '</tr></thead><tbody>' +
+                    rows + '</tbody>';
+            };
+            table('t-players', ['#', 'Játékos', 'Iskola', 'Legjobb', 'Futam'],
+                d.top_players.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.nickname)}</td><td>${esc(r.school_name ?? '—')}</td><td>${fmt(r.best_score)}</td><td>${r.run_count}</td></tr>`).join(''));
+            table('t-schools', ['#', 'Iskola', 'Átlag', 'Játékos'],
+                d.top_schools.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.name)} <span style="color:#95A5A6">${esc(r.city)}</span></td><td>${fmt(r.avg_score)}</td><td>${r.player_count}</td></tr>`).join(''));
+            table('t-classes', ['#', 'Osztály', 'Iskola', 'Átlag', 'Tag'],
+                d.top_classes.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.name)}</td><td>${esc(r.school_name)}</td><td>${fmt(r.avg_score)}</td><td>${r.player_count}</td></tr>`).join(''));
+
+            $('gate').classList.add('hidden');
+            $('board').classList.remove('hidden');
+        }
+
+        const stored = sessionStorage.getItem('dash_key');
+        if (stored) load(stored).then(render).catch(() => sessionStorage.removeItem('dash_key'));
+
+        async function tryLogin() {
+            const key = $('key').value.trim();
+            $('err').textContent = '';
+            try {
+                await load(key);
+                sessionStorage.setItem('dash_key', key);
+                const d = await load(key);
+                render(d);
+            } catch (e) {
+                $('err').textContent = e.message === 'unauthorized' ? 'Hibás jelszó.' : 'Nem érhető el a szerver.';
+            }
+        }
+        $('go').addEventListener('click', tryLogin);
+        $('key').addEventListener('keydown', (e) => { if (e.key === 'Enter') tryLogin(); });
+        $('logout').addEventListener('click', () => { sessionStorage.removeItem('dash_key'); location.reload(); });
+    </script>
+</body>
+</html>
