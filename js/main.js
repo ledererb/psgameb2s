@@ -197,11 +197,28 @@ function init() {
             e.preventDefault();
             if (state === 'playing') game.handleLaneChange(1);
         }
+
+        // WASD alternatív vezérlés: W = ugrás, S = csúszás
+        if (e.code === 'KeyW') {
+            e.preventDefault();
+            handleAction();
+        }
+        if (e.code === 'KeyS') {
+            e.preventDefault();
+            if (state === 'playing') {
+                if (!game.player.isOnGround) {
+                    game.handleGroundPound();
+                } else {
+                    slideKeyDown = true;
+                    game.handleSlide();
+                }
+            }
+        }
     });
 
     document.addEventListener('keyup', (e) => {
-        // Release slide on ArrowDown up
-        if (e.code === 'ArrowDown') {
+        // Release slide on ArrowDown or KeyS up
+        if (e.code === 'ArrowDown' || e.code === 'KeyS') {
             slideKeyDown = false;
             if (state === 'playing') {
                 game.handleSlideRelease();
