@@ -12,9 +12,13 @@ const sb = createClient(
 
 const META_TOKEN = Deno.env.get('META_ACCESS_TOKEN') ?? '';
 const META_ACCOUNT = Deno.env.get('META_AD_ACCOUNT_ID') ?? '';
+// A kampány-felelős által kijelölt 5 B2S hirdetés (2026-09-04):
 const B2S_CAMPAIGNS = [
-  '120250792694830010', // B2S 2026 — Forgalom
-  '120250774501550010', // B2S 2026 — Konverzió
+  { id: '120250792694830010', label: 'B2S — Forgalom' },
+  { id: '120250852149220010', label: '#reklám Amikor apaként…' },
+  { id: '120250818122580010', label: '👀 Te hány Hot-Dog (FB)' },
+  { id: '120250818114570010', label: '👀 Te hány Hot-Dog (IG)' },
+  { id: '120250693278470010', label: 'HOT-DOG VADÁSZAT INDUL!' },
 ];
 
 const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? Deno.env.get('ALLOWED_ORIGIN') ?? '*')
@@ -53,13 +57,21 @@ async function metaAdData() {
   const token = `access_token=${META_TOKEN}`;
 
   const [b2s7, acct30] = await Promise.all([
-    metaInsights(`${base}/120250792694830010/insights?fields=${fields}&date_preset=last_7d&${token}`),
+    metaInsights(`${base}/act_${META_ACCOUNT}/insights?fields=${fields}&date_preset=last_7d&${token}`),
     metaInsights(`${base}/act_${META_ACCOUNT}/insights?fields=${fields}&date_preset=last_30d&${token}`),
   ]);
+
+  const campaigns = await Promise.all(
+    B2S_CAMPAIGNS.map(async (c) => ({
+      id: c.id, label: c.label,
+      ...(await metaInsights(`${base}/${c.id}/insights?fields=${fields}&date_preset=last_7d&${token}`)) ?? {},
+    }))
+  );
 
   return {
     b2s_traffic_7d: b2s7,
     account_30d: acct30,
+    campaigns,
   };
 }
 
