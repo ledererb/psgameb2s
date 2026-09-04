@@ -63,6 +63,11 @@
         </div>
 
         <div class="panel">
+            <h2>🎵 TikTok hirdetések — kampány eleje óta</h2>
+            <div class="cards" id="tiktok-cards" style="margin:0"></div>
+        </div>
+
+        <div class="panel">
             <h2>📣 Kampány-szintű eredmények (7 nap)</h2>
             <table id="t-campaigns"></table>
         </div>
@@ -107,7 +112,21 @@
             renderMeta(data.meta);
             renderMain(data.stats);
             renderKpi(data.kpi);
+            renderTikTok(data.tiktok);
         }
+        function renderTikTok(tk) {
+            const el = $('tiktok-cards');
+            if (!el) return;
+            if (!tk) { el.innerHTML = '<div class="card" style="grid-column:1/-1"><div class="l">Nincs TikTok-adat.</div></div>'; return; }
+            el.innerHTML = [
+                [fmt(tk.spend) + ' Ft', 'Költés'],
+                [fmt(tk.impressions), 'Megjelenés'],
+                [fmt(tk.clicks), 'Kattintás'],
+                [fmt(tk.cpm) + ' Ft', 'CPM'],
+                [fmt(tk.cpc) + ' Ft', 'CPC'],
+            ].map(([v, l]) => `<div class="card"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+        }
+
         function renderKpi(kpi) {
             if (!kpi) return;
             const items = [
