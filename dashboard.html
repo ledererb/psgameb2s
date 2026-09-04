@@ -67,6 +67,11 @@
             <div class="cards" id="tiktok-cards" style="margin:0"></div>
         </div>
 
+        <div class="panel" style="border:2px solid var(--green); background:rgba(141,198,63,.06)">
+            <h2>🔗 Meta + TikTok összesen</h2>
+            <div class="cards" id="combined-cards" style="margin:0"></div>
+        </div>
+
         <div class="panel">
             <h2>📣 Kampány-szintű eredmények (7 nap)</h2>
             <table id="t-campaigns"></table>
@@ -113,7 +118,27 @@
             renderMain(data.stats);
             renderKpi(data.kpi);
             renderTikTok(data.tiktok);
+            renderCombined(data.meta?.b2s_traffic_7d, data.tiktok);
         }
+        function renderCombined(meta, tk) {
+            const el = $('combined-cards');
+            if (!el || !meta || !tk) { el.innerHTML = '<div class="card" style="grid-column:1/-1"><div class="l">Nincs elég adat.</div></div>'; return; }
+            const spend = Math.round((meta.spend ?? 0) + (tk.spend ?? 0));
+            const impressions = (meta.impressions ?? 0) + (tk.impressions ?? 0);
+            const clicks = (meta.clicks ?? 0) + (tk.clicks ?? 0);
+            const ctr = impressions > 0 ? (clicks / impressions * 100).toFixed(2) + '%' : '—';
+            const cpc = clicks > 0 ? (spend / clicks).toFixed(0) + ' Ft' : '—';
+            const cpm = impressions > 0 ? Math.round(spend / impressions * 1000) + ' Ft' : '—';
+            el.innerHTML = [
+                [fmt(spend) + ' Ft', 'Költés'],
+                [fmt(impressions), 'Megjelenés'],
+                [fmt(clicks), 'Kattintás'],
+                [ctr, 'CTR'],
+                [cpc, 'CPC'],
+                [cpm, 'CPM'],
+            ].map(([v, l]) => `<div class="card"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+        }
+
         function renderTikTok(tk) {
             const el = $('tiktok-cards');
             if (!el) return;
