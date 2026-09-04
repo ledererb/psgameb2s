@@ -115,7 +115,6 @@
                 { label: 'Linkkattintás (Meta+TikTok)', actual: kpi.link_clicks.actual, min: kpi.link_clicks.target_min, max: kpi.link_clicks.target_max, fmt: fmt },
                 { label: 'Landing-látogatás (LPV)', actual: kpi.lpv.actual, min: kpi.lpv.target_min, max: kpi.lpv.target_max, fmt: fmt },
                 { label: 'Játékregisztráció', actual: kpi.registrations.actual, min: kpi.registrations.target_min, max: kpi.registrations.target_max, fmt: fmt },
-                { label: 'Regisztrációs CPA (Ft)', actual: kpi.cpa.actual, min: kpi.cpa.target_min, max: kpi.cpa.target_max, fmt: fmt, inverted: true },
             ];
             $('kpi-list').innerHTML = items.map((k) => {
                 const pct = k.min > 0 ? Math.min(100, Math.round(k.actual / k.min * 100)) : 0;
