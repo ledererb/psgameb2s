@@ -21,6 +21,29 @@ const B2S_CAMPAIGNS = [
   { id: '120250693278470010', label: 'HOT-DOG VADÁSZAT INDUL!' },
 ];
 
+// ── TikTok statikus report-adatok (kézi frissítés — TikTok report xlsx-ből) ──
+const TIKTOK = {
+  spend: 83452,
+  impressions: 553450,
+  clicks: 3922,
+  cpm: 151,
+  cpc: 21,
+};
+
+// ── KPI célok (kampány-terv) ──
+const KPI_TARGETS = {
+  impressions_min: 1800000,
+  impressions_max: 2500000,
+  link_clicks_min: 25000,
+  link_clicks_max: 35000,
+  lpv_min: 20000,
+  lpv_max: 30000,
+  registrations_min: 6000,
+  registrations_max: 12000,
+  cpa_min: 170,
+  cpa_max: 330,
+};
+
 const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? Deno.env.get('ALLOWED_ORIGIN') ?? '*')
   .split(',').map((s) => s.trim());
 
@@ -94,5 +117,26 @@ Deno.serve(async (req) => {
     metaAdData(),
   ]);
 
-  return json({ generated_at: new Date().toISOString(), stats: dbRes, meta: metaRes }, 200, origin);
+  // ── KPI számítás (Meta + TikTok együtt) ──
+  const meta7 = metaRes?.b2s_traffic_7d;
+  const metaImpressions = meta7?.impressions ?? 0;
+  const metaClicks = meta7?.clicks ?? 0;
+  const metaSpend = meta7?.spend ?? 0;
+
+  const totalImpressions = metaImpressions + TIKTOK.impressions;
+  const totalClicks = metaClicks + TIKTOK.clicks;
+  const totalSpend = metaSpend + TIKTOK.spend;
+  const registrations = dbRes?.totals?.players ?? 0;
+  const cpa = registrations > 0 ? Math.round(totalSpend / registrations) : 0;
+
+  const kpi = {
+    impressions: { actual: totalImpressions, target_min: KPI_TARGETS.impressions_min, target_max: KPI_TARGETS.impressions_max },
+    link_clicks: { actual: totalClicks, target_min: KPI_TARGETS.link_clicks_min, target_max: KPI_TARGETS.link_clicks_max },
+    lpv: { actual: 0, target_min: KPI_TARGETS.lpv_min, target_max: KPI_TARGETS.lpv_max },
+    registrations: { actual: registrations, target_min: KPI_TARGETS.registrations_min, target_max: KPI_TARGETS.registrations_max },
+    cpa: { actual: cpa, target_min: KPI_TARGETS.cpa_min, target_max: KPI_TARGETS.cpa_max },
+    total_spend: totalSpend,
+  };
+
+  return json({ generated_at: new Date().toISOString(), stats: dbRes, meta: metaRes, kpi }, 200, origin);
 });
