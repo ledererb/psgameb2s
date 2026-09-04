@@ -52,9 +52,14 @@
         <p class="sub" id="updated"></p>
 
         <div class="panel" style="margin-top:16px">
-            <h2>📣 Meta hirdetések — B2S Forgalom (7 nap)</h2>
+            <h2>📣 Meta hirdetések — összesen (7 nap)</h2>
             <div class="cards" id="meta-cards" style="margin:0"></div>
             <p class="sub" id="meta-note" style="margin-top:8px"></p>
+        </div>
+
+        <div class="panel">
+            <h2>📣 Kampány-szintű eredmények (7 nap)</h2>
+            <table id="t-campaigns"></table>
         </div>
 
         <div class="cards" id="cards"></div>
@@ -124,23 +129,6 @@
                 [fmt(t.with_email), 'E-mailt megadott'],
             ];
             $('cards').innerHTML = cards.map(([v, l]) => `<div class="card"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
-
-            // Meta hirdetések (ha van adat)
-            const mc = $('meta-cards');
-            if (d.meta && d.meta.b2s_traffic_7d) {
-                const m = d.meta.b2s_traffic_7d;
-                mc.innerHTML = [
-                    [fmt(Math.round(m.spend)) + ' Ft', 'Költés (7 nap)'],
-                    [fmt(m.impressions), 'Megjelenés'],
-                    [fmt(m.reach), 'Elérés'],
-                    [fmt(m.clicks), 'Kattintás'],
-                    [m.ctr.toFixed(2) + '%', 'CTR'],
-                    [Number(m.cpc.toFixed(2)) + ' Ft', 'CPC'],
-                ].map(([v, l]) => `<div class="card"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
-                if ($('meta-note')) $('meta-note').textContent = 'Forrás: Meta Marketing API — B2S Forgalom kampány, utolsó 7 nap.';
-            } else {
-                mc.innerHTML = '<div class="card" style="grid-column:1/-1"><div class="l">Nincs elérhető Meta-adat még.</div></div>';
-            }
 
             const max = Math.max(...stats.daily.map((x) => Math.max(x.registrations, x.runs)), 1);
             $('bars').innerHTML = stats.daily.map((x) => {
