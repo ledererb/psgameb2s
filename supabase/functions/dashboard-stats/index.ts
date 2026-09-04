@@ -137,5 +137,5 @@ Deno.serve(async (req) => {
     total_spend: totalSpend,
   };
 
-  return json({ generated_at: new Date().toISOString(), stats: dbRes, meta: metaRes, kpi }, 200, origin);
+  return json({ generated_at: new Date().toISOString(), stats: dbRes, meta: metaRes, tiktok: TIKTOK, kpi }, 200, origin);
 });
