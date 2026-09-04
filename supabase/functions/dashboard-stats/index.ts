@@ -94,5 +94,5 @@ Deno.serve(async (req) => {
     metaAdData(),
   ]);
 
-  return json({ stats: dbRes, meta: metaRes }, 200, origin);
+  return json({ generated_at: new Date().toISOString(), stats: dbRes, meta: metaRes }, 200, origin);
 });
