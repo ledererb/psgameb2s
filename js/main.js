@@ -340,6 +340,7 @@ function tryFullscreen() {
 
 function startGame() {
     runStartTime = performance.now();
+    trackEvent('game_start', { event_category: 'game' }, 'trackCustom', 'GameStart');
     tryFullscreen();
     audio.init();
     audio.resume();
@@ -358,6 +359,11 @@ function startGame() {
 
 function showGameOverScreen(score, stats) {
     gameOverScreen.classList.remove('hidden');
+    trackEvent('game_over', {
+        event_category: 'game',
+        value: Math.floor(score),
+        distance: Math.round(stats?.distance ?? 0)
+    }, 'trackCustom', 'GameOver');
     finalScoreEl.textContent = formatScore(score);
     saveResultEl.classList.add('hidden');
     document.getElementById('reg-overlay').classList.add('hidden');
@@ -485,6 +491,11 @@ async function submitPendingScore() {
         const stats = await api.submitScore(payload);
         playerStore.setBest(stats.best_score ?? pendingScore.score);
         playerStore.outboxRemove(pendingScore.client_run_id);
+        trackEvent('score_saved', {
+            event_category: 'game',
+            value: stats.best_score ?? pendingScore.score,
+            rank: stats.rank_individual
+        }, 'track', 'CompleteRegistration');
         pendingScore = null;
         renderSaveResult(stats);
         // sikeres beküldés után a sorban várakozó korábbi futamok is menjenek fel (spec §6.6)
