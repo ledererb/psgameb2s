@@ -309,6 +309,25 @@ function handleAction() {
     // gameover state: buttons handle actions
 }
 
+// ── Analytics helper ──
+
+function trackEvent(gaEventName, gaParams = {}, fbAction = 'trackCustom', fbEventName = null) {
+    try {
+        if (typeof gtag === 'function') {
+            gtag('event', gaEventName, gaParams);
+        }
+    } catch (e) {
+        console.warn('[analytics:gtag]', e);
+    }
+    try {
+        if (typeof fbq === 'function' && fbEventName) {
+            fbq(fbAction, fbEventName, gaParams);
+        }
+    } catch (e) {
+        console.warn('[analytics:fbq]', e);
+    }
+}
+
 // ── Screen transitions ──
 
 function showMenu() {
