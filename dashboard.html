@@ -201,11 +201,9 @@
                 [fmt(t.players), 'Regisztrált játékos'],
                 [fmt(t.new_today), 'Új ma'],
                 [fmt(t.new_7d), 'Új 7 nap alatt'],
-                [fmt(t.scorers), 'Pontot küldő játékos'],
                 [fmt(t.runs), 'Beküldött futam'],
                 [fmt(t.schools_active) + ' / ' + fmt(t.schools_total), 'Aktív iskola (összes)'],
                 [fmt(t.classes_active), 'Aktív osztály'],
-                [fmt(t.with_email), 'E-mailt megadott'],
             ];
             $('cards').innerHTML = cards.map(([v, l]) => `<div class="card"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
 
