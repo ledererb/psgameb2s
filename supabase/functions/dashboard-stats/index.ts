@@ -147,6 +147,7 @@ Deno.serve(async (req) => {
     link_clicks: { actual: totalClicks, target_min: KPI_TARGETS.link_clicks_min, target_max: KPI_TARGETS.link_clicks_max },
     lpv: { actual: 17523, target_min: KPI_TARGETS.lpv_min, target_max: KPI_TARGETS.lpv_max },
     registrations: { actual: registrations, target_min: KPI_TARGETS.registrations_min, target_max: KPI_TARGETS.registrations_max },
+    runs_played: { actual: dbRes?.totals?.runs ?? 0, target_min: 12000, target_max: 12000 },
     total_spend: totalSpend,
   };
 
