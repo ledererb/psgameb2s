@@ -30,6 +30,9 @@ const TIKTOK = {
   cpc: 21,
 };
 
+// ── Kampány dátumtartomány (ez alapján kérdezzük a Meta insightokat) ──
+const CAMPAIGN_START = '2026-08-24';
+
 // ── KPI célok (kampány-terv) ──
 const KPI_TARGETS = {
   impressions_min: 1800000,
@@ -78,22 +81,32 @@ async function metaAdData() {
   const base = 'https://graph.facebook.com/v21.0';
   const fields = 'spend,impressions,reach,clicks,ctr,cpc';
   const token = `access_token=${META_TOKEN}`;
+  // kampány kezdete óta (aug 24)
+  const range = `since=${CAMPAIGN_START}&until=${new Date().toISOString().slice(0, 10)}`;
 
-  const [b2s7, acct30] = await Promise.all([
-    metaInsights(`${base}/act_${META_ACCOUNT}/insights?fields=${fields}&date_preset=last_7d&${token}`),
-    metaInsights(`${base}/act_${META_ACCOUNT}/insights?fields=${fields}&date_preset=last_30d&${token}`),
-  ]);
-
-  const campaigns = await Promise.all(
-    B2S_CAMPAIGNS.map(async (c) => ({
-      id: c.id, label: c.label,
-      ...(await metaInsights(`${base}/${c.id}/insights?fields=${fields}&date_preset=last_7d&${token}`)) ?? {},
-    }))
+  const campaignResults = await Promise.all(
+    B2S_CAMPAIGNS.map((c) =>
+      metaInsights(`${base}/${c.id}/insights?fields=${fields}&${range}&${token}`)
+    )
   );
 
+  const campaigns = B2S_CAMPAIGNS.map((c, i) => ({
+    id: c.id, label: c.label,
+    ...(campaignResults[i] ?? {}),
+  }));
+
+  const sum = (key: string) => campaigns.reduce((acc, c) => acc + ((c as any)[key] ?? 0), 0);
+
   return {
-    b2s_traffic_7d: b2s7,
-    account_30d: acct30,
+    total: {
+      spend: sum('spend'),
+      impressions: sum('impressions'),
+      reach: sum('reach'),
+      clicks: sum('clicks'),
+      ctr: sum('impressions') > 0 ? (sum('clicks') / sum('impressions') * 100).toFixed(2) : '0',
+      cpc: sum('clicks') > 0 ? (sum('spend') / sum('clicks')).toFixed(0) : '0',
+      cpm: sum('impressions') > 0 ? Math.round(sum('spend') / sum('impressions') * 1000) : 0,
+    },
     campaigns,
   };
 }
@@ -117,8 +130,8 @@ Deno.serve(async (req) => {
     metaAdData(),
   ]);
 
-  // ── KPI számítás (Meta + TikTok együtt) ──
-  const meta7 = metaRes?.b2s_traffic_7d;
+  // ── KPI számítás (Meta + TikTok együtt, kampány eleje óta) ──
+  const meta7 = metaRes?.total;
   const metaImpressions = meta7?.impressions ?? 0;
   const metaClicks = meta7?.clicks ?? 0;
   const metaSpend = meta7?.spend ?? 0;
@@ -132,7 +145,7 @@ Deno.serve(async (req) => {
   const kpi = {
     impressions: { actual: totalImpressions, target_min: KPI_TARGETS.impressions_min, target_max: KPI_TARGETS.impressions_max },
     link_clicks: { actual: totalClicks, target_min: KPI_TARGETS.link_clicks_min, target_max: KPI_TARGETS.link_clicks_max },
-    lpv: { actual: 9981, target_min: KPI_TARGETS.lpv_min, target_max: KPI_TARGETS.lpv_max },
+    lpv: { actual: 17523, target_min: KPI_TARGETS.lpv_min, target_max: KPI_TARGETS.lpv_max },
     registrations: { actual: registrations, target_min: KPI_TARGETS.registrations_min, target_max: KPI_TARGETS.registrations_max },
     total_spend: totalSpend,
   };
