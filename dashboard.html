@@ -103,7 +103,6 @@
 
         function render(data) {
             $('updated').textContent = 'Frissítve: ' + new Date(data.generated_at).toLocaleString('hu-HU');
-            renderMeta(data.meta);
             renderMain(data.stats);
             renderKpi(data.kpi);
             renderTikTok(data.tiktok);
