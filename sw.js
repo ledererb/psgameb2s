@@ -5,7 +5,7 @@
 // sosem cache-elve. Verzióbump → régi cache takarítás.
 // ============================================
 
-const CACHE = 'snacky-shell-v1';
+const CACHE = "snacky-shell-v2";
 
 self.addEventListener('install', (e) => {
     self.skipWaiting();

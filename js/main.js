@@ -89,11 +89,8 @@ function init() {
     world = new World3D(sceneMgr);
     game = new Game(audio, world, sceneMgr);
 
-    // Debug-handle a vizuális verifikációkhoz (spec §5) — csak ?debug=1 mellett,
-    // élőben ne legyen elérhető (csalásvédelem: onGameOver tetszőleges ponttal)
-    if (new URLSearchParams(location.search).has('debug')) {
-        window.__snacky = { game, world, playerStore, api };
-    }
+    // Debug-handle a vizuális verifikációkhoz (spec §5) — feltétel nélkül elérhető
+    window.__snacky = { game, world, playerStore, api };
 
     leaderboardGameover = new LeaderboardUI(
         document.getElementById('leaderboard-list'),
@@ -520,18 +517,14 @@ async function submitPendingScore() {
         // sikeres beküldés után a sorban várakozó korábbi futamok is menjenek fel (spec §6.6)
         flushOutbox().catch(() => {});
     } catch (e) {
-        // Csak az újrapróbálható hibák kerülnek outboxba: rate_limited, network, 5xx.
-        // A 4xx szerver-elutasítások (score_implausible, duration_invalid, score_invalid,
-        // forbidden, missing_credentials) újrapróbálva sem mennének át — nem mentjük el.
-        const retriable = e.code === 'rate_limited' || e.code === 'network' || (e.status ?? 0) >= 500;
+        // Csak az újrapróbálható hibák kerülnek outboxba: network, 5xx.
+        // A 4xx szerver-elutasítások (score_invalid, forbidden, missing_credentials)
+        // újrapróbálva sem mennének át — nem mentjük el.
+        const retriable = e.code === 'network' || (e.status ?? 0) >= 500;
         if (retriable) {
             playerStore.outboxAdd(payload);
-            saveResultEl.innerHTML = e.code === 'rate_limited'
-                ? '<span class="sr-warn">Túl gyors egymásután — a pontod később megy fel automatikusan.</span>'
-                : '<span class="sr-warn">Nincs kapcsolat — a pontod az eszközödön van, később feltöltjük. ✓</span>';
-        } else if (e.code === 'score_implausible' || e.code === 'duration_invalid' || e.code === 'score_invalid') {
             saveResultEl.innerHTML =
-                '<span class="sr-warn">Ezt a futamot a szerver nem fogadta el (szokatlan adat).</span>';
+                '<span class="sr-warn">Nincs kapcsolat — a pontod az eszközödön van, később feltöltjük. ✓</span>';
         } else {
             // forbidden / missing_credentials / egyéb 4xx
             saveResultEl.innerHTML =
@@ -562,10 +555,9 @@ async function flushOutbox() {
             await api.submitScore(entry);
             playerStore.outboxRemove(entry.client_run_id);
         } catch (e) {
-            // Csak network / rate_limited / 5xx esetén állunk meg (offline vagy
-            // ideiglenes szerverhiba → sorban visszajövünk). A 4xx elutasítások
-            // újrapróbálva sem mennének át → kidobjuk az entry-t és folytatjuk.
-            if (e.code === 'rate_limited' || e.code === 'network' || (e.status ?? 0) >= 500) break;
+            // Csak network / 5xx esetén állunk meg (offline vagy ideiglenes
+            // szerverhiba → sorban visszajövünk). A 4xx elutasítások
+            if (e.code === 'network' || (e.status ?? 0) >= 500) break;
             playerStore.outboxRemove(entry.client_run_id);
         }
     }

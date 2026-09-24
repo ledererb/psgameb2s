@@ -576,10 +576,11 @@ kbd {
 
 /* ═══════════════ B2S — regisztráció + ranglista ═══════════════ */
 .reg-form { margin: 16px 0; text-align: left; }
-.reg-form input[type="text"], .reg-form select {
+.reg-form input[type="text"], .reg-form input[type="email"], .reg-form select {
     width: 100%; padding: 10px 14px; margin: 6px 0;
     border: 2px solid rgba(255,255,255,.15); border-radius: 10px;
     background: rgba(255,255,255,.06); color: #fff; font-family: inherit; font-size: 15px;
+    box-sizing: border-box;
 }
 .reg-form input:focus { outline: none; border-color: #ffd23f; }
 .form-hint { font-size: 12px; opacity: .7; margin: 6px 0 10px; line-height: 1.4; }
@@ -798,4 +799,47 @@ kbd {
         box-shadow: 0 6px 26px rgba(46, 204, 113, 0.75), 0 0 16px rgba(46, 204, 113, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
         transform: scale(1.02);
     }
+}
+
+/* ── B2S: nyereményblokk (game over + regisztrációs overlay) ── */
+.prize-block {
+    margin: 16px auto;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(255, 210, 63, 0.12), rgba(255, 140, 66, 0.08));
+    border: 1px solid rgba(255, 210, 63, 0.35);
+    border-radius: 12px;
+    max-width: 420px;
+    text-align: left;
+}
+.prize-title {
+    font-family: 'Bangers', cursive;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    color: #ffd23f;
+    margin: 0 0 10px;
+    text-align: center;
+    text-shadow: 0 0 12px rgba(255, 210, 63, 0.35);
+}
+.prize-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.prize-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #eef2f5;
+}
+.prize-item strong { color: #ffd23f; }
+.prize-item em { color: #95a5a6; font-style: normal; font-size: 0.8rem; }
+.prize-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+@media (max-width: 480px) {
+    .prize-block { padding: 10px 12px; margin: 12px auto; }
+    .prize-item { font-size: 0.82rem; }
 }

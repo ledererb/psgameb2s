@@ -38,7 +38,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=2">
 </head>
 <body>
     <div id="game-container">
@@ -125,6 +125,16 @@
                     </div>
                 </div>
 
+                <!-- ═══ B2S: nyeremények (játékszabályzat) ═══ -->
+                <div class="prize-block">
+                    <h3 class="prize-title">🎁 A tiéd lehet!</h3>
+                    <ul class="prize-list">
+                        <li class="prize-item"><span class="prize-icon">🛒</span><span><strong>10 × 40 000 Ft</strong> értékű Dorko vásárlási utalvány <em>(egyéni sorsoláson)</em></span></li>
+                        <li class="prize-item"><span class="prize-icon">🚌</span><span><strong>1 × 500 000 Ft</strong> értékű Feldobox osztálykirándulás élménycsomag <em>(a nyertes osztálynak)</em></span></li>
+                        <li class="prize-item"><span class="prize-icon">🏆</span><span>Elismerő oklevél és cím <em>(a nyertes iskolának)</em></span></li>
+                    </ul>
+                </div>
+
                 <!-- ═══ B2S: mentési eredmény / regisztráció ═══ -->
                 <div id="save-result" class="save-result hidden"></div>
                 <div id="skin-unlock-banner" class="skin-unlock-banner hidden"></div>
@@ -157,6 +167,14 @@
     <div id="reg-overlay" class="screen overlay hidden">
         <div class="screen-content gameover-content">
             <div class="reg-form">
+                <div class="prize-block">
+                    <h3 class="prize-title">🎁 Regisztrálj, és nyerj!</h3>
+                    <ul class="prize-list">
+                        <li class="prize-item"><span class="prize-icon">🛒</span><span><strong>10 × 40 000 Ft</strong> értékű Dorko vásárlási utalvány <em>(egyéni sorsoláson)</em></span></li>
+                        <li class="prize-item"><span class="prize-icon">🚌</span><span><strong>1 × 500 000 Ft</strong> értékű Feldobox osztálykirándulás élménycsomag <em>(a nyertes osztálynak)</em></span></li>
+                        <li class="prize-item"><span class="prize-icon">🏆</span><span>Elismerő oklevél és cím <em>(a nyertes iskolának)</em></span></li>
+                    </ul>
+                </div>
                 <p class="form-label">Mentsd el a pontod és nyerj!</p>
                 <input type="text" id="reg-nickname" placeholder="Becenév (nem valódi neved!)"
                        maxlength="20" autocomplete="off">
