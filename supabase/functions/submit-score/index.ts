@@ -15,19 +15,6 @@ const corsHeaders = (origin: string | null) => ({
   'Vary': 'Origin',
 });
 
-// Konzervatív plauzibilitás (game.js: ~60 p/mp alap, de a kombó-szorzó és a
-// 2× pontszorzó együtt elit futamban 2000 p/mp fölé viheti — 4000 a biztonságos határ)
-// Sapkák: LAZÍTVA a valós fizika alapján (darabonként max 100×20×2=4000 p).
-// Cél: csak a durva hamis beküldések legyenek megfogva, a valós elit futamok sosem.
-const MAX_SCORE_PER_SEC = 4000;   // éles top-átlag ~1000/mp; 2000+/mp az elit határa
-const MAX_SCORE_PER_METER = 400;  // éles max ~70/m; a kombó×20×2 elméletileg 150–250/m-et is enged
-const BASE_ALLOWANCE = 5000;
-const MIN_DURATION_MS = 3_000;
-const MAX_DURATION_MS = 3_600_000; // 1 óra
-const RATE_LIMIT_MS = 10_000;      // 1 beküldés / 10 mp / játékos (isolate-memória)
-
-const lastSubmit = new Map<string, number>();
-
 Deno.serve(async (req) => {
   const CORS = corsHeaders(req.headers.get('origin'));
   const json = (body: unknown, status = 200) =>
@@ -46,21 +33,6 @@ Deno.serve(async (req) => {
   const distance = Math.max(0, Math.floor(Number(b.distance_m ?? 0)));
   const duration = Math.floor(Number(b.duration_ms ?? 0));
   if (!Number.isFinite(score) || score < 0) return json({ error: 'score_invalid' }, 400);
-  if (duration < MIN_DURATION_MS || duration > MAX_DURATION_MS) {
-    return json({ error: 'duration_invalid' }, 422);
-  }
-  if (score > MAX_SCORE_PER_SEC * (duration / 1000) + BASE_ALLOWANCE) {
-    return json({ error: 'score_implausible' }, 422);
-  }
-  // pont↔táv keresztellenőrzés: a távolság is kliens-adat, de együtt nehezebb hazudni
-  if (score > MAX_SCORE_PER_METER * distance + BASE_ALLOWANCE) {
-    return json({ error: 'score_implausible' }, 422);
-  }
-
-  const now = Date.now();
-  if (now - (lastSubmit.get(player_id) ?? 0) < RATE_LIMIT_MS) {
-    return json({ error: 'rate_limited' }, 429);
-  }
 
   const { data: player } = await sb.from('players').select('id')
     .eq('id', player_id).eq('secret', secret).limit(1);
@@ -88,7 +60,6 @@ Deno.serve(async (req) => {
     }
     return json({ error: 'insert_failed' }, 500);
   }
-  lastSubmit.set(player_id, now);
 
   const { data: stats } = await sb.rpc('fn_player_stats', { p_player_id: player_id });
   return json(stats);
